@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { getReport } from '../Service/ReportApi';
+import { getReport, downloadReport } from '../Service/ReportApi';
 import {
   FormControl,
   InputLabel,
@@ -16,8 +16,9 @@ import {
   Box,
   Skeleton,
 } from '@mui/material';
-
-const partners = ['hbomax', 'amazonprimevideo', 'disneyplushotstar', 'viu'];
+import DownloadIcon from '@mui/icons-material/Download';
+import CircularDeterminate from './Common/CustomLoader';
+const partners = ['amazonprimevideo', 'bbcplayer', 'beinsportsconnect', 'cmgo', 'hbomax', 'iqiyi', 'mangotv', 'simplysouth', 'spotvnow', 'tvbanywhereplus', 'vidio', 'viu', 'wetv', 'youku', 'zee5'];
 const dayOptions = [1, 2, 3, 4, 5];
 
 const RecentTrend = () => {
@@ -42,6 +43,51 @@ const RecentTrend = () => {
       });
   }, [partner, days]);
 
+  const formatContentType = (type) => {
+    switch (type.toLowerCase()) {
+      case 'tvseries':
+        return 'TV Series';
+      case 'movie':
+        return 'Movie';
+      case 'tvseason':
+        return 'TV season';
+      case 'tvepisode':
+        return 'TV Episode';
+      default:
+        return type;
+    }
+  };
+
+  const downloadCSV = () => {
+    const url = `http://localhost:9090/report/generate-pdf-report?projectName=${partner}&days=${days}`;
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `report_${partner}_${days}days.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    // const rows = data?.rows.flatMap(row =>
+    //   Object.entries(row.dayCounts).map(([date, values]) => ({
+    //     Date: date,
+    //     ContentType: row.contentType,
+    //     Success: values.success,
+    //     Failure: values.failure,
+    //     NotModified: values.notModified,
+    //     Total: values.total,
+    //   }))
+    // );
+
+    // const csv =
+    //   'Date,ContentType,Success,Failure,NotModified,Total\n' +
+    //   rows.map(r => Object.values(r).join(',')).join('\n');
+
+    // const blob = new Blob([csv], { type: 'text/csv' });
+    // const link = document.createElement('a');
+    // link.href = URL.createObjectURL(blob);
+    // link.download = `recent_trends_${partner}_${days}days.csv`;
+    // link.click();
+  };
+
   const handlePartnerChange = (e) => {
     const newPartner = e.target.value;
     setPartner(newPartner);
@@ -60,7 +106,7 @@ const RecentTrend = () => {
       <Paper
         key={contentType}
         sx={{
-          mb: 4,
+          mb: 7,
           background: '#333',
           color: '#fff',
           borderRadius: 2,
@@ -68,45 +114,50 @@ const RecentTrend = () => {
           overflow: 'hidden',
         }}
       >
-        <Typography sx={{ p: 2, color: '#fff', fontWeight: 'bold', fontSize: '21px', ml: 8.5 }}>
-          {contentType.toUpperCase()}
+        <Typography
+          sx={{
+            p: 1,
+            pl: 2.5,
+            color: '#fff',
+            fontWeight: 'bold',
+            fontSize: '24px',
+            textAlign: 'center',
+            backgroundColor: '#1a1a1aff',
+            borderBottom: '1px solid #444',
+            letterSpacing: '1px',
+          }}
+        >
+          {formatContentType(contentType)}
         </Typography>
         <Table
           sx={{
-            tableLayout: 'fixed',
             width: '100%',
+            borderCollapse: 'collapse',
             '& th, & td': {
               borderBottom: '1px solid #444',
-              padding: '10px',
               color: '#fff',
               textAlign: 'center',
-
+              // fontSize: '16px',
+              padding: '7px 0',
             },
             '& thead th': {
+              backgroundColor: '#2a2a2a',
+              // textAlign: 'center',
               fontWeight: 'bold',
-              
+              // fontSize: '17px'
             },
-            '& tbody tr:last-of-type td': {
-              borderBottom: 'none',
+            '& tbody tr:hover': {
+              backgroundColor: '#383838',
             },
           }}
         >
           <TableHead>
             <TableRow>
-              <TableCell sx={{ color: '#fff', width: '20%', textAlign: 'left', fontSize: '18px' }}>Date</TableCell>
-              <TableCell sx={{ color: '#fff', width: '20%', textAlign: 'left', fontSize: '18px' }}>Success</TableCell>
-              <TableCell sx={{ color: '#fff', width: '20%', textAlign: 'left', fontSize: '18px' }}>Failure</TableCell>
-              <TableCell sx={{ color: '#fff', width: '20%', textAlign: 'left', fontSize: '18px' }}>Not Modified</TableCell>
-              <TableCell sx={{
-                paddingRight: 0,
-                color: '#fff',
-                width: '20%',
-                textAlign: 'left',
-                fontSize: '18px'
-              }}
-              >
-                Total
-              </TableCell>
+              <TableCell sx={{ textAlign: 'left', fontSize: '19px', width: '20%' }}>Date</TableCell>
+              <TableCell sx={{ textAlign: 'right', fontSize: '19px', width: '20%' }}>Success</TableCell>
+              <TableCell sx={{ textAlign: 'right', fontSize: '19px', width: '20%' }}>Failure</TableCell>
+              <TableCell sx={{ textAlign: 'right', fontSize: '19px', width: '20%' }}>Not Modified</TableCell>
+              <TableCell sx={{ textAlign: 'right', fontSize: '19px', width: '20%' }}>Total</TableCell>
             </TableRow>
           </TableHead>
           <TableBody
@@ -124,20 +175,11 @@ const RecentTrend = () => {
                   borderBottom: '1px solid #444',
                 }}
               >
-                <TableCell style={{ color: '#fff', width: '20%', fontSize: '18px' }}>{date}</TableCell>
-                <TableCell style={{ color: '#fff', width: '20%', fontSize: '18px' }}>{dayCounts[date].success}</TableCell>
-                <TableCell style={{ color: '#fff', width: '20%', fontSize: '18px' }}>{dayCounts[date].failure}</TableCell>
-                <TableCell style={{ color: '#fff', width: '20%', fontSize: '18px' }}>{dayCounts[date].notModified}</TableCell>
-                <TableCell sx={{
-                  paddingRight: 0,
-                  // minWidth: '100px',
-                  color: '#fff',
-                  width: '20%',
-                  fontSize: '18px'
-                }}
-                >
-                  {dayCounts[date].total}
-                </TableCell>
+                <TableCell sx={{ textAlign: 'left', fontSize: '17px' }}>{date}</TableCell>
+                <TableCell sx={{ textAlign: 'right', fontSize: '17px' }}>{dayCounts[date].success}</TableCell>
+                <TableCell sx={{ textAlign: 'right', fontSize: '17px' }}>{dayCounts[date].failure}</TableCell>
+                <TableCell sx={{ textAlign: 'right', fontSize: '17px' }}>{dayCounts[date].notModified}</TableCell>
+                <TableCell sx={{ textAlign: 'right', fontSize: '17px' }}>{dayCounts[date].total}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -299,6 +341,26 @@ const RecentTrend = () => {
             ))}
           </Select>
         </FormControl>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <button
+            onClick={() => downloadCSV()}
+            style={{
+              backgroundColor: '#e26838',
+              color: '#f8f4f8',
+              padding: '6px 14px',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              boxShadow: '0px 2px 6px rgba(0,0,0,0.6)'
+            }}
+          >
+            <DownloadIcon />
+          </button>
+        </Box>
+      </Box>
       </Box>
 
       {!loading && data?.rows?.length > 0 ? (

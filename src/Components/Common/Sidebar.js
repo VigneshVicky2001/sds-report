@@ -17,7 +17,7 @@ const Sidebar = ({ open, isMinimized }) => {
     }
     return location.pathname === path;
   };
-  const drawerWidth = isMinimized ? 70 : 230;
+  const drawerWidth = isMinimized ? 70 : 250;
   const navigate = useNavigate();
 
   const navigateToPage = (path) => {
