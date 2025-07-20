@@ -26,7 +26,7 @@ const Sidebar = ({ open, isMinimized }) => {
 
   const menuItems = [
     { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
-    { label: 'SDS dashboard', path: '/sds-dashboard', icon: <CategoryIcon /> },
+    { label: 'SD dashboard', path: '/sds-dashboard', icon: <CategoryIcon /> },
     { label: 'Partner Details', path: '/partner-details', icon: <ViewListIcon /> },
     { label: 'Recent Trends', path: '/report/hbomax/daily-summary?days=5', icon: <SummarizeIcon /> }
   ];

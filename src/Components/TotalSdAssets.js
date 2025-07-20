@@ -1,256 +1,259 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Typography,
   Box,
-  MenuItem,
-  FormControl,
-  Select,
-  InputLabel,
+  CircularProgress,
+  Grid,
+  Card,
+  CardContent,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Skeleton,
+  Autocomplete,
+  TextField,
 } from "@mui/material";
-import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from "recharts";
-import { GlobalStyles } from '@mui/material';
-import { useNavigate } from "react-router-dom";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  BarChart,
+  Bar,
+} from "recharts";
+import { getReport } from "../Service/ReportApi";
 
 const COLORS = ["#4DB6AC", "#FF7043", "#9575CD", "#64B5F6"];
-
-const projectRawData = [
-  {
-    project: "amazonprimevideo",
-    total_failure: 2798,
-    total_success: 247,
-    total_not_modified: 17847,
-    total: 20892,
-  },
-  {
-    project: "viu",
-    total_failure: 1023,
-    total_success: 548,
-    total_not_modified: 12500,
-    total: 14071,
-  },
+const partners = [
+  "amazonprimevideo", "bbcplayer", "beinsportsconnect", "cmgo",
+  "hbomax", "iqiyi", "mangotv", "simplysouth", "spotvnow",
+  "tvbanywhereplus", "vidio", "viu", "wetv", "youku", "zee5"
 ];
 
-const contentTypeRawData = [
-  {
-    project: "amazonprimevideo",
-    totals: {
-      movie: 1936,
-      tvepisode: 16431,
-      tvseason: 1521,
-      tvseries: 904,
-    },
-  },
-  {
-    project: "viu",
-    totals: {
-      movie: 1402,
-      tvepisode: 9800,
-      tvseason: 2200,
-      tvseries: 669,
-    },
-  },
-];
-
-// Custom active shape to make hover enlarge effect
-const renderActiveShape = (props) => {
-  const {
-    cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill,
-  } = props;
-
-  return (
-    <Sector
-      cx={cx}
-      cy={cy}
-      innerRadius={innerRadius}
-      outerRadius={outerRadius + 15}
-      startAngle={startAngle}
-      endAngle={endAngle}
-      fill={fill}
-    />
-  );
-};
+const ChartWrapper = ({ title, children, height = 360 }) => (
+  <Box sx={{ mb: 4, backgroundColor: "#1d1d1d", p: 3, borderRadius: 2 }}>
+    <Typography variant="h6" sx={{ mb: 2, color: "#fff" }}>
+      {title}
+    </Typography>
+    <ResponsiveContainer width="100%" height={height}>
+      {children}
+    </ResponsiveContainer>
+  </Box>
+);
 
 const TotalVodAssets = () => {
-  const navigate = useNavigate();
-  const [animateCharts, setAnimateCharts] = useState(true);
-  const [selectedProject, setSelectedProject] = useState(projectRawData[0].project);
-  const [status, setStatus] = useState(false);
-  const [hoveredIndex1, setHoveredIndex1] = useState(null);
-  const [hoveredIndex2, setHoveredIndex2] = useState(null);
+  const [selectedPartner, setSelectedPartner] = useState(partners[0]);
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState(null);
 
-  const handleProjectChange = (event) => {
-    const newProject = event.target.value;
-    setAnimateCharts(false);
-    setSelectedProject(newProject);
-    requestAnimationFrame(() => setAnimateCharts(true));
+  useEffect(() => {
+    setLoading(true);
+    getReport({ partner: selectedPartner, days: 5 })
+      .then((res) => {
+        const totals = { success: 0, failure: 0, notModified: 0, total: 0 };
+        const dailyData = [];
+        const contentTypeTotals = {};
+
+        res.rows.forEach((row) => {
+          Object.entries(row.dayCounts).forEach(([date, day]) => {
+            let daily = dailyData.find((d) => d.date === date);
+            if (!daily) {
+              daily = { date, success: 0, failure: 0, notModified: 0, total: 0 };
+              dailyData.push(daily);
+            }
+
+            daily.success += day.success || 0;
+            daily.failure += day.failure || 0;
+            daily.notModified += day.notModified || 0;
+            daily.total += (day.success || 0) + (day.failure || 0);
+
+            totals.success += day.success || 0;
+            totals.failure += day.failure || 0;
+            totals.notModified += day.notModified || 0;
+            totals.total += (day.success || 0) + (day.failure || 0);
+          });
+
+          contentTypeTotals[row.contentType] =
+            (contentTypeTotals[row.contentType] || 0) +
+            Object.values(row.dayCounts).reduce(
+              (sum, day) => sum + day.success,
+              0
+            );
+        });
+
+        dailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
+        setDashboardData({ totals, dailyData, contentTypeTotals });
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error loading dashboard:", err);
+        setLoading(false);
+      });
+  }, [selectedPartner]);
+
+  const handlePartnerChange = (event, value) => {
+    if (value) setSelectedPartner(value);
   };
 
-  const selectedData = projectRawData.find(
-    (proj) => proj.project === selectedProject
-  );
-  const contentTypeData = contentTypeRawData.find(
-    (item) => item.project === selectedProject
-  );
+  const pieData = dashboardData
+    ? [
+        { name: "Success", value: dashboardData.totals.success },
+        { name: "Failure", value: dashboardData.totals.failure },
+        { name: "Not Modified", value: dashboardData.totals.notModified },
+      ]
+    : [];
 
-  const pieData1 = [
-    { name: "Success", value: selectedData.total_success },
-    { name: "Failure", value: selectedData.total_failure },
-    { name: "Not Modified", value: selectedData.total_not_modified },
-    {
-      name: "Remaining",
-      value:
-        selectedData.total -
-        (selectedData.total_success +
-          selectedData.total_failure +
-          selectedData.total_not_modified),
-    },
-  ];
-
-  const pieData2 = [
-  { name: "Movie", value: contentTypeData.totals.movie },
-  { name: "TV Series", value: contentTypeData.totals.tvseries },
-  { name: "TV Season", value: contentTypeData.totals.tvseason },
-  { name: "TV Episode", value: contentTypeData.totals.tvepisode },
-];
-
+  const barData = dashboardData
+    ? Object.entries(dashboardData.contentTypeTotals).map(([key, value]) => ({
+        name:
+          key.toLowerCase() === "tvseries"
+            ? "TV Series"
+            : key.toLowerCase() === "tvseason"
+            ? "TV Season"
+            : key.toLowerCase() === "tvepisode"
+            ? "TV Episode"
+            : "Movie",
+        value,
+      }))
+    : [];
 
   return (
-    <>
-      <GlobalStyles
-        styles={{
-          'g[tabindex]:focus': {
-            outline: 'none',
-            stroke: 'none',         // Kill any default stroke
-            filter: 'none',         // Sometimes used for glow
-          },
-          'g[tabindex]:focus path': {
-            outline: 'none',
-            stroke: 'none',
-            filter: 'none',
-          },
-        }}
-      />
-    <Box
-      sx={{
-        backgroundColor: "#212121",
-        minHeight: "100vh",
-        padding: "40px",
-        color: "#e0e0e0",
-      }}
-    >
-      <Typography variant="h5" sx={{ mb: 3 }}>
-        Syndication
+    <Box sx={{ minHeight: "100vh", p: 4 }}>
+      <Typography variant="h4" sx={{ mb: 4, fontWeight: "bold", color: "#fff" }}>
+        Syndication Dashboard
       </Typography>
 
-      <FormControl sx={{ mb: 5, minWidth: 300 }}>
-        <InputLabel sx={{ color: "#e0e0e0" }}>Select partner</InputLabel>
-        <Select
-          value={selectedProject}
-          label="Select Project"
-          onChange={handleProjectChange}
-          sx={{
-            backgroundColor: "#424242",
-            color: "#e0e0e0",
-            "& .MuiSvgIcon-root": { color: "#e0e0e0" },
-          }}
-        >
-          {projectRawData.map((proj) => (
-            <MenuItem key={proj.project} value={proj.project}>
-              {proj.project}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      <Autocomplete
+        disablePortal
+        options={partners}
+        sx={{ width: 300, mb: 4 }}
+        value={selectedPartner}
+        onChange={handlePartnerChange}
+        renderInput={(params) => (
+          <TextField {...params} label="Select Partner" variant="outlined" sx={{
+            "& .MuiInputBase-root": { color: "#fff", backgroundColor: "#333" },
+            "& .MuiInputLabel-root": { color: "#ccc" },
+            "& .MuiOutlinedInput-notchedOutline": { borderColor: "#555" },
+          }} />
+        )}
+      />
 
-      <Box sx={{ display: "flex", justifyContent: "space-between", gap: 6 }}>
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h5" sx={{ mb: 2, textAlign: "center" }}>
-            Content Status
-          </Typography>
-          <ResponsiveContainer width="100%" height={400}>
-            <PieChart>
-              <Pie
-                data={pieData1}
-                cx="50%"
-                cy="50%"
-                outerRadius={150}
-                dataKey="value"
-                labelLine={false}
-                onClick={(_, index) => {
-                  const clicked = pieData1[index];
-                  const label = clicked.name;
-                  let status = null;
+      {/* KPIs */}
+      <Grid container spacing={3}>
+        {loading
+          ? [...Array(3)].map((_, i) => (
+              <Grid item xs={12} md={4} key={i}>
+                <Skeleton variant="rectangular" height={100} />
+              </Grid>
+            ))
+          : [
+              { title: "Total Success", value: dashboardData.totals.success },
+              { title: "Total Failures", value: dashboardData.totals.failure },
+              { title: "Total Assets", value: dashboardData.totals.total },
+            ].map((item, i) => (
+              <Grid item xs={12} md={4} key={i}>
+                <Card sx={{ backgroundColor: "#333", border: "1px solid #444" }}>
+                  <CardContent>
+                    <Typography variant="subtitle1" sx={{ color: "#ccc" }}>
+                      {item.title}
+                    </Typography>
+                    <Typography variant="h5" sx={{ color: "#fff", fontWeight: "bold" }}>
+                      {item.value}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+      </Grid>
 
-                  if (label === "Success") status = "success";
-                  else if (label === "Failure") status = "failure";
-                  else if (label === "Not Modified") status = "notModified";
-
-                  if (status) {
-                    navigate(`/partner-details/${selectedProject}/${status}`);
-                  }
-                }}
-                isAnimationActive={animateCharts}
-                activeIndex={hoveredIndex1}
-                activeShape={renderActiveShape}
-                onMouseEnter={(_, index) => setHoveredIndex1(index)}
-                onMouseLeave={() => setHoveredIndex1(null)}
-                label={({ name, value }) => (value > 0 ? `${name}: ${value}` : "")}
-              >
-                {pieData1.map((entry, index) => (
-                  <Cell
-                    key={`cell-status-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                    tabIndex={-1} // 👈 disables focus on each slice
-                  />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-          <Typography variant="subtitle1" sx={{ mt: 2, textAlign: "center" }}>
-            Total: {selectedData.total}
-          </Typography>
-        </Box>
-
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="h5" sx={{ mb: 2, textAlign: "center"}}>
-            Overall Summary
-          </Typography>
-          <ResponsiveContainer width="100%" height={400}>
-            <PieChart>
-              <Pie
-                data={pieData2}
-                cx="50%"
-                cy="50%"
-                outerRadius={150}
-                dataKey="value"
-                labelLine={false}
-                animationDuration={200}
-                isAnimationActive={animateCharts}
-                activeIndex={hoveredIndex2}
-                activeShape={renderActiveShape}
-                onMouseEnter={(_, index) => setHoveredIndex2(index)}
-                onMouseLeave={() => setHoveredIndex2(null)}
-                label={({ name, value }) =>
-                  value > 0 ? `${name}: ${value}` : ""
-                }
-              >
-                {pieData2.map((entry, index) => (
-                  <Cell
-                    key={`cell-status-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                    tabIndex={-1}
-                  />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-          <Typography variant="subtitle1" sx={{ mt: 2, textAlign: "center" }}>
-            Total: {pieData2.reduce((sum, item) => sum + item.value, 0)}
-          </Typography>
-        </Box>
+      {/* Visualizations */}
+      {!loading && dashboardData ? (
+        <Grid container spacing={4} sx={{ mt: 4 }}>
+  <Grid item xs={12} md={9}>
+    <ChartWrapper title="Syndication Result Distribution">
+      <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={pieData}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={100}
+              paddingAngle={3}
+              dataKey="value"
+              nameKey="name"
+              label={({ name, percent }) =>
+                `${name} (${(percent * 100).toFixed(1)}%)`
+              }
+            >
+              {pieData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value, name) => [`${value}`, name]} />
+            <Legend layout="horizontal" verticalAlign="bottom" align="center" />
+          </PieChart>
+        </ResponsiveContainer>
       </Box>
+    </ChartWrapper>
+  </Grid>
+
+
+
+          <Grid item xs={12} md={6}>
+            <ChartWrapper title="Daily Total Content Updates">
+              <BarChart data={dashboardData.dailyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#555" />
+                <XAxis dataKey="date" stroke="#ccc" />
+                <YAxis stroke="#ccc" />
+                <Tooltip />
+                <Bar dataKey="total" fill="#9575CD" />
+              </BarChart>
+            </ChartWrapper>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <ChartWrapper title="Success Rate by Content Type">
+              <BarChart data={barData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#555" />
+                <XAxis dataKey="name" stroke="#ccc" />
+                <YAxis stroke="#ccc" />
+                <Tooltip />
+                <Bar dataKey="value" fill="#64B5F6" />
+              </BarChart>
+            </ChartWrapper>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <ChartWrapper title="Daily Success/Failure Trend">
+              <LineChart data={dashboardData.dailyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#555" />
+                <XAxis dataKey="date" stroke="#ccc" />
+                <YAxis stroke="#ccc" />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="success" stroke="#4DB6AC" />
+                <Line type="monotone" dataKey="failure" stroke="#FF7043" />
+                <Line type="monotone" dataKey="notModified" stroke="#9575CD" />
+              </LineChart>
+            </ChartWrapper>
+          </Grid>
+        </Grid>
+      ) : (
+        <Box sx={{ mt: 4 }}>
+          <Skeleton variant="rectangular" height={360} />
+        </Box>
+      )}
     </Box>
-    </>
   );
 };
 

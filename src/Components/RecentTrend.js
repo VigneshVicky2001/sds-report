@@ -363,12 +363,23 @@ const RecentTrend = () => {
       </Box>
       </Box>
 
-      {!loading && data?.rows?.length > 0 ? (
-        data.rows.map((row) => renderTable(row.contentType, row.dayCounts))
-      ) : (
+      {loading ? (
         <>
           {Array(2).fill().map((_, idx) => renderSkeletonTable())}
         </>
+      ) : data?.rows?.length > 0 ? (
+        data.rows.map((row) => renderTable(row.contentType, row.dayCounts))
+      ) : (
+        <Typography
+          variant="h6"
+          sx={{
+            textAlign: 'center',
+            mt: 5,
+            color: '#aaa'
+          }}
+        >
+          No data available for the selected partner.
+        </Typography>
       )}
     </Box>
   );
