@@ -146,7 +146,6 @@ const TotalVodAssets = () => {
         )}
       />
 
-      {/* KPIs */}
       <Grid container spacing={3}>
         {loading
           ? [...Array(3)].map((_, i) => (
@@ -174,7 +173,6 @@ const TotalVodAssets = () => {
             ))}
       </Grid>
 
-      {/* Visualizations */}
       {!loading && dashboardData ? (
         <Grid container spacing={4} sx={{ mt: 4 }}>
   <Grid item xs={12} md={9}>

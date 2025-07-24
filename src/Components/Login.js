@@ -22,10 +22,10 @@ const Login = () => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 'calc(100vh - 90px)',
+        minHeight: 'calc(100vh - 120px)',
         backgroundColor: '#212121',
         color: '#fff',
-        paddingBottom: '30px',
+        paddingBottom: '20px',
       }}
     >
 

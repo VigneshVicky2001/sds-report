@@ -1,31 +1,58 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, MenuItem, 
-  FormControl, Select, InputLabel, Box, TablePagination 
+  FormControl, Select, InputLabel, Box, TablePagination
 } from "@mui/material";
 import { LocalizationProvider, MobileDateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useParams, useSearchParams } from "react-router-dom";
+import { getSummaryList } from "../Service/SummaryApi";
 import CustomPagination from "./Common/CustomPagination";
 import dayjs from "dayjs";
 
+const partners = ['amazonprimevideo', 'bbcplayer', 'beinsportsconnect', 'cmgo', 'hbomax', 'iqiyi', 'mangotv', 'simplysouth', 'spotvnow', 'tvbanywhereplus', 'vidio', 'viu', 'wetv', 'youku', 'zee5'];
+
 const PartnerContentDetails = () => {
-  const { partnerName, status } = useParams();
-  const [searcParams] = useSearchParams();
-  const initialStatus = searcParams.get("status") || "all";
+  // const [searchParams] = useSearchParams();
+  // const projectName = searchParams.get("projectName") || "";
+  const [statusFilter, setStatusFilter] = useState("");
+  const [contentTypes, setContentTypes] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [searchField, setSearchField] = useState();
+  const [projectName, setProjectName] = useState("amazonprimevideo"); //default
+  const [data, setData] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const data = [
-    { id: 1, name: "ABC", contentType: "movie", status: "failure", failureReason: "lorem ipsum" },
-    { id: 2, name: "DEF", contentType: "movie", status: "failure", failureReason: "lorem ipsum" },
-    { id: 3, name: "GHI", contentType: "movie", status: "failure", failureReason: "lorem ipsum" },
-    { id: 4, name: "JKL", contentType: "movie", status: "failure", failureReason: "lorem ipsum" },
-    { id: 5, name: "MNO", contentType: "movie", status: "failure", failureReason: "lorem ipsum" },
-    { id: 6, name: "PQR", contentType: "movie", status: "failure", failureReason: "lorem ipsum" },
-  ];
+  const fetchData = async () => {
+    const payload = {
+      status: statusFilter ? [statusFilter] : [],
+      contentTypes: contentTypes ? [contentTypes] : [],
+      searchText,
+      searchField,
+      pageNumber: page,
+      pageSize: rowsPerPage,
+    };
 
-  const handleChangePage = (event, newPage) => setPage(newPage);
+    try {
+      console.log(projectName);
+      const response = await getSummaryList({ payload, projectName });
+      setData(response.data || []);
+      setTotalCount(response.total || 0);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [page, rowsPerPage, statusFilter, contentTypes, projectName]);
+
+    const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
@@ -43,82 +70,129 @@ const PartnerContentDetails = () => {
       >
         <Box
           sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 3,
-            marginBottom: 3,
-            flexWrap: "wrap",
+            backgroundColor: "#2b2b2b",
+            padding: 3,
+            borderRadius: 2,
+            mb: 3,
+            boxShadow: "0 0 10px rgba(0,0,0,0.5)",
           }}
         >
-          <FormControl sx={{ minWidth: 180 }} size="small" variant="outlined">
-            <InputLabel
-              shrink
-              sx={{
-                color: "#fff",
-                "&.Mui-focused": {
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 3,
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <FormControl sx={{ minWidth: 200 }} size="small">
+              <InputLabel sx={{ color: "#fff" }}>Partner</InputLabel>
+              <Select
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                sx={{
+                  backgroundColor: "#333",
                   color: "#fff",
-                },
-              }}
-            >
-              Partner
-            </InputLabel>
-            <Select
-              value={partnerName}
-              displayEmpty
-              sx={{
-                backgroundColor: "#333",
-                color: "#fff",
-                border: "1px solid #555",
-                ".MuiSvgIcon-root": { color: "#fff" },
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#555",
-                },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#888",
-                },
-              }}
-              inputProps={{ 'aria-label': 'Partner' }}
-            >
-              <MenuItem value="amazonprimevideo">Amazon Prime Video</MenuItem>
-              <MenuItem value="viu">Viu</MenuItem>
-            </Select>
-          </FormControl>
+                  border: "1px solid #555",
+                  ".MuiSvgIcon-root": { color: "#fff" },
+                }}
+              >
+                {partners.map((p) => (
+                  <MenuItem key={p} value={p}>
+                    {p}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-          <FormControl sx={{ minWidth: 180 }} size="small" variant="outlined">
-            <InputLabel
-              shrink
-              sx={{
-                color: "#fff",
-                "&.Mui-focused": {
+            <FormControl sx={{ minWidth: 180 }} size="small">
+              <InputLabel sx={{ color: "#fff" }}>Status</InputLabel>
+              <Select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                sx={{
+                  backgroundColor: "#333",
                   color: "#fff",
-                },
+                  border: "1px solid #555",
+                  ".MuiSvgIcon-root": { color: "#fff" },
+                }}
+              >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="Success">Success</MenuItem>
+                <MenuItem value="Failure">Failure</MenuItem>
+                <MenuItem value="NotModified">Not Modified</MenuItem>
+              </Select>
+            </FormControl>
+
+            <FormControl sx={{ minWidth: 180 }} size="small">
+              <InputLabel sx={{ color: "#fff" }}>Content Type</InputLabel>
+              <Select
+                value={contentTypes}
+                onChange={(e) => setContentTypes(e.target.value)}
+                sx={{
+                  backgroundColor: "#333",
+                  color: "#fff",
+                  border: "1px solid #555",
+                  ".MuiSvgIcon-root": { color: "#fff" },
+                }}
+              >
+                <MenuItem value="">All</MenuItem>
+                <MenuItem value="movie">Movie</MenuItem>
+                <MenuItem value="tvseries">TV Series</MenuItem>
+                <MenuItem value="tvseason">TV Season</MenuItem>
+                <MenuItem value="tvepisode">TV Episode</MenuItem>
+                <MenuItem value="event">Live Event</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Box display="flex" alignItems="center" gap={3} flexWrap="wrap">
+            <FormControl>
+              <Box display="flex" gap={2} color="#fff">
+                <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <input
+                    type="radio"
+                    value="contentTitle"
+                    checked={searchField === "contentTitle"}
+                    onChange={(e) => setSearchField(e.target.value)}
+                  />
+                  Content Title
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <input
+                    type="radio"
+                    value="contentId"
+                    checked={searchField === "contentId"}
+                    onChange={(e) => setSearchField(e.target.value)}
+                  />
+                  Content ID
+                </label>
+              </Box>
+            </FormControl>
+
+            <input
+              type="text"
+              value={searchText}
+              placeholder={`Search by ${searchField}`}
+              onChange={(e) => setSearchText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setPage(0);
+                  fetchData();
+                }
               }}
-            >
-              Status
-            </InputLabel>
-            <Select
-              value={status}
-              displayEmpty
-              sx={{
-                backgroundColor: "#333",
-                color: "#fff",
-                border: "1px solid #555",
-                ".MuiSvgIcon-root": { color: "#fff" },
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#555",
-                },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#888",
-                },
+              style={{
+                padding: "8px 12px",
+                borderRadius: "6px",
+                backgroundColor: "#444",
+                color: "white",
+                border: "1px solid #777",
+                minWidth: "300px",
+                fontSize: "14px",
               }}
-              inputProps={{ 'aria-label': 'Status' }}
-            >
-              <MenuItem value="all">All</MenuItem>
-              <MenuItem value="success">Success</MenuItem>
-              <MenuItem value="failure">Failure</MenuItem>
-              <MenuItem value="notModified">Not Modified</MenuItem>
-            </Select>
-          </FormControl>
+            />
+          </Box>
         </Box>
 
 
@@ -137,11 +211,11 @@ const PartnerContentDetails = () => {
           >
             <TableHead>
               <TableRow sx={{ backgroundColor: "#424242" }}>
-                <TableCell sx={{ color: "#e6e7e7", borderBottom: "none" }}><strong>Title</strong></TableCell>
-                <TableCell sx={{ color: "#e6e7e7", borderBottom: "none" }}><strong>ID</strong></TableCell>
-                <TableCell sx={{ color: "#e6e7e7", borderBottom: "none" }}><strong>Status</strong></TableCell>
                 <TableCell sx={{ color: "#e6e7e7", borderBottom: "none" }}><strong>Content Type</strong></TableCell>
-                <TableCell sx={{ color: "#e6e7e7", borderBottom: "none" }}><strong>failure Reason</strong></TableCell>
+                <TableCell sx={{ color: "#e6e7e7", borderBottom: "none" }}><strong>Titel</strong></TableCell>
+                <TableCell sx={{ color: "#e6e7e7", borderBottom: "none" }}><strong>ID</strong></TableCell>
+                <TableCell sx={{ color: "#e6e7e7", borderBottom: "none" }}><strong>Ingestion Status</strong></TableCell>
+                <TableCell sx={{ color: "#e6e7e7", borderBottom: "none" }}><strong>Failure Reason</strong></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -157,13 +231,13 @@ const PartnerContentDetails = () => {
                     "&:last-child td": { borderBottom: 0 },
                   }}
                 >
-                  <TableCell sx={{ color: "#e6e7e7", border: "none" }}>{item.name}</TableCell>
-                  <TableCell sx={{ color: "#e6e7e7", border: "none" }}>{item.id}</TableCell>
+                  <TableCell sx={{ color: "#e6e7e7", border: "none" }}>{item.cty}</TableCell>
+                  <TableCell sx={{ color: "#e6e7e7", border: "none" }}>{item.prt_cnt_title?.[0]?.n || "---"}</TableCell>
                   <TableCell sx={{ color: "#e6e7e7", border: "none" }}>
-                    {item.status}
+                    {item.prt_cnt_id}
                   </TableCell>
-                  <TableCell sx={{ color: "#e6e7e7", border: "none" }}>{item.contentType}</TableCell>
-                  <TableCell sx={{ color: "#e6e7e7", border: "none" }}>{item.failureReason}</TableCell>
+                  <TableCell sx={{ color: "#e6e7e7", border: "none" }}>{item.ing_st}</TableCell>
+                  <TableCell sx={{ color: "#e6e7e7", border: "none" }}>{item.reason || "---"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -198,7 +272,7 @@ const PartnerContentDetails = () => {
           }}
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={data.length}
+          count={totalCount}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
