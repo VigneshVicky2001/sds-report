@@ -172,7 +172,7 @@ const PartnerContentDetails = () => {
 
             <input
               type="text"
-              disabled={!searchField}
+              disabled={searchField == "All"}
               value={searchText}
               placeholder={searchField ? `Search by ${searchField}` : "Select a search field"}
               onChange={(e) => setSearchText(e.target.value)}
