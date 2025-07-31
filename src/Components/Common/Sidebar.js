@@ -1,10 +1,10 @@
 import React from 'react';
-import { Drawer, List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
+import { Drawer, List, ListItem, ListItemIcon, ListItemText, Typography } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import CategoryIcon from '@mui/icons-material/Category';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ViewListIcon from '@mui/icons-material/ViewList';
-import SummarizeIcon from '@mui/icons-material/Summarize';
+import TimelineIcon from '@mui/icons-material/Timeline';
 
 const Sidebar = ({ open, isMinimized }) => {
   const location = useLocation();
@@ -28,7 +28,7 @@ const Sidebar = ({ open, isMinimized }) => {
     { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
     { label: 'SD dashboard', path: '/sds-dashboard', icon: <CategoryIcon /> },
     { label: 'Partner Details', path: '/partner-details', icon: <ViewListIcon /> },
-    { label: 'Recent Trends', path: '/report/hbomax/daily-summary?days=5', icon: <SummarizeIcon /> }
+    { label: 'Recent Trends', path: '/report/hbomax/daily-summary?days=5', icon: <TimelineIcon /> }
   ];
 
   return (
@@ -42,14 +42,17 @@ const Sidebar = ({ open, isMinimized }) => {
           width: drawerWidth,
           backgroundColor: '#171717',
           color: '#fff',
-          paddingTop: '60px',
+          paddingTop: '30px',
           position: 'fixed',
-          bottom: '50px',
+          bottom: '20px',
           transition: 'width 0.3s ease',
         },
       }}
       open={open}
     >
+      {/* <Typography variant="h5" sx={{ mb: 4, color: "#fff" }}>
+        Telekom Malaysia Syndication
+      </Typography> */}
       <List
         sx={{
           cursor: "pointer",

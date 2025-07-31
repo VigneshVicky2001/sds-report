@@ -18,6 +18,8 @@ import {
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import CircularDeterminate from './Common/CustomLoader';
+import { format } from 'date-fns'
+
 const partners = ['amazonprimevideo', 'bbcplayer', 'beinsportsconnect', 'cmgo', 'hbomax', 'iqiyi', 'mangotv', 'simplysouth', 'spotvnow', 'tvbanywhereplus', 'vidio', 'viu', 'wetv', 'youku', 'zee5'];
 const dayOptions = [1, 2, 3, 4, 5];
 
@@ -129,6 +131,7 @@ const RecentTrend = () => {
         >
           {formatContentType(contentType)}
         </Typography>
+        <Box sx={{ display: 'block', maxHeight: 400, overflowY: 'auto', overflowX: 'hidden' }}>
         <Table
           sx={{
             width: '100%',
@@ -184,6 +187,7 @@ const RecentTrend = () => {
             ))}
           </TableBody>
         </Table>
+        </Box>
       </Paper>
     );
   };
@@ -256,24 +260,41 @@ const RecentTrend = () => {
     <Box
       sx={{
         color: '#fff',
-        padding: '16px',
+        padding: 3,
+        // mt: 7,
         maxWidth: '1400px',
-        margin: '0 auto',
+        margin: '15px auto',
       }}
     >
       <Typography gutterBottom sx={{ fontSize: '24px', fontWeight: 'bold' }}>
         Recent Trends
       </Typography>
 
-      <Box sx={{ display: 'flex', gap: 4, mb: 4, mt: 3 }}>
+      <Box
+        sx={{
+          position: 'sticky',
+          top: 10,
+          zIndex: 1100,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 3,
+          mb: 4,
+          mt: 2,
+          px: 3,
+          py: 2,
+          borderRadius: 2,
+          backgroundColor: '#1f1f1f',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.6)',
+          flexWrap: 'wrap',
+        }}
+      >
         <FormControl sx={{ minWidth: 180 }} size="small" variant="outlined">
-          <InputLabel 
+          <InputLabel
             shrink
-            sx={{ 
+            sx={{
               color: '#fff',
-              "&.Mui-focused": {
-                color: "#fff",
-              }, 
+              '&.Mui-focused': { color: '#fff' },
             }}
           >
             Partner
@@ -283,18 +304,15 @@ const RecentTrend = () => {
             onChange={handlePartnerChange}
             label="Partner"
             sx={{
-                backgroundColor: "#333",
-                color: "#fff",
-                border: "1px solid #555",
-                ".MuiSvgIcon-root": { color: "#fff" },
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#555",
-                },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#888",
-                },
-              }}
-              inputProps={{ 'aria-label': 'Partner' }}
+              backgroundColor: '#2a2a2a',
+              color: '#fff',
+              '.MuiSvgIcon-root': { color: '#fff' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: '#555' },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#888',
+              },
+            }}
+            inputProps={{ 'aria-label': 'Partner' }}
           >
             {partners.map((p) => (
               <MenuItem key={p} value={p}>
@@ -304,14 +322,12 @@ const RecentTrend = () => {
           </Select>
         </FormControl>
 
-        <FormControl sx={{ minWidth: 100 }} size="small" variant="outlined">
-          <InputLabel 
+        <FormControl sx={{ minWidth: 120 }} size="small" variant="outlined">
+          <InputLabel
             shrink
-            sx={{ 
+            sx={{
               color: '#fff',
-              "&.Mui-focused": {
-                color: "#fff",
-              }, 
+              '&.Mui-focused': { color: '#fff' },
             }}
           >
             Days
@@ -321,18 +337,15 @@ const RecentTrend = () => {
             onChange={handleDaysChange}
             label="Days"
             sx={{
-                backgroundColor: "#333",
-                color: "#fff",
-                border: "1px solid #555",
-                ".MuiSvgIcon-root": { color: "#fff" },
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#555",
-                },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#888",
-                },
-              }}
-              inputProps={{ 'aria-label': 'Partner' }}
+              backgroundColor: '#2a2a2a',
+              color: '#fff',
+              '.MuiSvgIcon-root': { color: '#fff' },
+              '& .MuiOutlinedInput-notchedOutline': { borderColor: '#555' },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: '#888',
+              },
+            }}
+            inputProps={{ 'aria-label': 'Days' }}
           >
             {dayOptions.map((d) => (
               <MenuItem key={d} value={d}>
@@ -341,26 +354,29 @@ const RecentTrend = () => {
             ))}
           </Select>
         </FormControl>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Box>
+
+        <Box sx={{ ml: 'auto' }}>
           <button
-            onClick={() => downloadCSV()}
+            onClick={downloadCSV}
             style={{
+              display: 'flex',
+              alignItems: 'center',
               backgroundColor: '#e26838',
-              color: '#f8f4f8',
+              color: '#fff',
               padding: '6px 14px',
               border: 'none',
               borderRadius: '6px',
               cursor: 'pointer',
               fontSize: '14px',
-              fontWeight: '500',
-              boxShadow: '0px 2px 6px rgba(0,0,0,0.6)'
+              fontWeight: 500,
+              boxShadow: '0px 2px 6px rgba(0,0,0,0.5)',
+              transition: 'background-color 0.2s ease',
             }}
           >
-            <DownloadIcon />
+            <DownloadIcon sx={{ fontSize: 20, mr: 1 }} />
+            Download
           </button>
         </Box>
-      </Box>
       </Box>
 
       {loading ? (

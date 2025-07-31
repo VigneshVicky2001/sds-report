@@ -126,7 +126,14 @@ const TotalVodAssets = () => {
     : [];
 
   return (
-    <Box sx={{ minHeight: "100vh", p: 4 }}>
+    <Box 
+      sx={{ 
+        // minHeight: "100vh",
+        p: 4,
+        padding: 3,
+        mt: 2,
+      }}
+    >
       <Typography variant="h4" sx={{ mb: 4, fontWeight: "bold", color: "#fff" }}>
         Syndication Dashboard
       </Typography>
