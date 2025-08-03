@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, MenuItem, 
   FormControl, Select, InputLabel, Box, TablePagination, Tooltip, Button
 } from "@mui/material";
 import { LocalizationProvider, MobileDateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useLocation } from "react-router-dom";
 import { getSummaryList } from "../Service/SummaryApi";
 import CustomPagination from "./Common/CustomPagination";
 import dayjs from "dayjs";
@@ -23,9 +23,17 @@ const PartnerContentDetails = () => {
   const [projectName, setProjectName] = useState("amazonprimevideo"); //default
   const [data, setData] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+  const location = useLocation();
+  const [invalidSearchAttempt, setInvalidSearchAttempt] = useState(false);
+  
+  const rows = new Array(53).fill(0).map((_, i) => ({
+    title: `Item ${i + 1}`,
+    status: "Active",
+  }));
 
   const fetchData = async () => {
     const payload = {
@@ -51,11 +59,14 @@ const PartnerContentDetails = () => {
   };
 
   useEffect(() => {
-    // setPage(0);
+    setPage(0);
+  }, [location.pathname]);
+
+  useEffect(() => {
     fetchData();
   }, [page, rowsPerPage, statusFilter, contentTypes, projectName]);
 
-    const handleChangePage = (event, newPage) => {
+  const handleChangePage = (_, newPage) => {
     setPage(newPage);
   };
 
@@ -63,6 +74,21 @@ const PartnerContentDetails = () => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
+
+  const handleStatusChange = useCallback((e) => {
+    setPage(0);
+    setStatusFilter(e.target.value);
+  }, []);
+
+  const handleContentTypeChange = useCallback((e) => {
+    setPage(0);
+    setContentTypes(e.target.value);
+  }, []);
+
+  const handleProjectNameChange = useCallback((e) => {
+    setPage(0);
+    setProjectName(e.target.value);
+  }, []);
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -102,9 +128,12 @@ const PartnerContentDetails = () => {
         <Box
           sx={{
             backgroundColor: "#2b2b2b",
-            padding: 3,
+            paddingTop: 3,
+            paddingLeft: 3,
+            paddingRight: 3,
+            paddingBottom: 1,
             borderRadius: 2,
-            mb: 3,
+            mb: 1.5,
             boxShadow: "0 0 10px rgba(0,0,0,0.5)",
           }}
         >
@@ -114,14 +143,14 @@ const PartnerContentDetails = () => {
               flexWrap: "wrap",
               gap: 3,
               alignItems: "center",
-              mb: 2,
+              // mb: 2,
             }}
           >
             <FormControl sx={{ minWidth: 200 }} size="small">
               <InputLabel sx={{ color: "#fff" }}>Partner</InputLabel>
               <Select
                 value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
+                onChange={handleProjectNameChange}
                 sx={{
                   backgroundColor: "#333",
                   color: "#fff",
@@ -141,7 +170,7 @@ const PartnerContentDetails = () => {
               <InputLabel sx={{ color: "#fff" }}>Status</InputLabel>
               <Select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={handleStatusChange}
                 sx={{
                   backgroundColor: "#333",
                   color: "#fff",
@@ -160,7 +189,7 @@ const PartnerContentDetails = () => {
               <InputLabel sx={{ color: "#fff" }}>Content Type</InputLabel>
               <Select
                 value={contentTypes}
-                onChange={(e) => setContentTypes(e.target.value)}
+                onChange={handleContentTypeChange}
                 sx={{
                   backgroundColor: "#333",
                   color: "#fff",
@@ -198,34 +227,69 @@ const PartnerContentDetails = () => {
               </Select>
             </FormControl>
 
-            <input
-              type="text"
-              disabled={searchField == "All"}
-              value={searchText}
-              placeholder={searchField ? `Search by ${searchField}` : "Select a search field"}
-              onChange={(e) => setSearchText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  setPage(0);
-                  fetchData();
-                }
-              }}
-              style={{
-                height: "23px",
-                padding: "8px 12px",
-                borderRadius: "6px",
-                backgroundColor: "#444",
-                color: "white",
-                border: "1px solid #777",
-                minWidth: "300px",
-                fontSize: "14px",
-              }}
-            />
+            <Box display="flex" flexDirection="column" alignItems="flex-start">
+              <input
+                type="text"
+                value={searchText}
+                placeholder={searchField ? `Search by ${searchField}` : "Select a search field"}
+                readOnly={searchField === "all"}
+                onFocus={() => {
+                  if (searchField === "all") {
+                    setInvalidSearchAttempt(true);
+                    setTimeout(() => setInvalidSearchAttempt(false), 5000);
+                  }
+                }}
+                onChange={(e) => {
+                  if (searchField !== "all") {
+                    setSearchText(e.target.value);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    if (searchField === "all") {
+                      setInvalidSearchAttempt(true);
+                      setTimeout(() => setInvalidSearchAttempt(false), 1000);
+                    } else {
+                      setPage(0);
+                      fetchData();
+                    }
+                  }
+                }}
+                style={{
+                  marginTop: "25px",
+                  height: "23px",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  backgroundColor: "#444",
+                  color: "white",
+                  border: `1px solid ${invalidSearchAttempt ? "red" : "#777"}`,
+                  minWidth: "300px",
+                  fontSize: "14px",
+                  outline: "none",
+                  animation: invalidSearchAttempt ? "shake 0.3s" : "none",
+                  cursor: "text", // <--- ensures not visually disabled
+                  opacity: 1,      // <--- override grayed-out look
+                }}
+              />
+              <Typography
+                sx={{
+                  color: "red",
+                  fontSize: "12px",
+                  minHeight: "18px", // <--- reserves space even if not visible
+                  mt: 1,
+                  visibility: invalidSearchAttempt ? "visible" : "hidden",
+                }}
+              >
+                Please select a valid search field
+              </Typography>
+            </Box>
 
             <Button
               onClick={() => {
-                setSearchField("");
+                setSearchField("all");
                 setSearchText("");
+                setStatusFilter("All");
+                setContentTypes("All");
                 setPage(0);
                 fetchData();
               }}
@@ -257,7 +321,7 @@ const PartnerContentDetails = () => {
           sx={{
             backgroundColor: "#333",
             boxShadow: "0px 0px 20px rgba(0, 0, 0, 0.5)",
-            maxHeight: "calc(100vh - 275px)",
+            maxHeight: "calc(100vh - 279px)",
             overflow: "auto"
           }}
         >
@@ -280,7 +344,27 @@ const PartnerContentDetails = () => {
               </TableRow>
             </TableHead>
               <TableBody>
-                {data.map((item, index) => (
+                {(data.length === 0 && !loading ) ? (
+                  <TableRow
+                    sx={{
+                      "&:last-child td": { borderBottom: 0 },
+                    }}
+                  >
+                    <TableCell colSpan={5} align="center" sx={{ color: "#bbb", py: 5, paddingBottom: "-20px" }}>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          textAlign: 'center',
+                          // mt: 5,
+                          color: '#aaa'
+                        }}
+                      >
+                        No data available for the selected partner.
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                data.map((item, index) => (
                   <TableRow
                     key={item.id}
                     hover
@@ -300,15 +384,32 @@ const PartnerContentDetails = () => {
                     <TableCell sx={{ color: "#e6e7e7", border: "none" }}>{item.ing_st}</TableCell>
                     <TableCell sx={{ color: "#e6e7e7", border: "none" }}>
                       {Array.isArray(item.reason) && item.reason.length > 0 ? (
-                        <Tooltip title={item.reason.join(', ')} arrow placement="top">
-                          <span>{item.reason.join(', ')}</span>
+                        <Tooltip
+                          arrow
+                          placement="top"
+                          title={
+                            <React.Fragment>
+                              <Typography sx={{ fontSize: 14 }}>
+                                <ul style={{ margin: 0, paddingLeft: 16 }}>
+                                  {item.reason.map((reason, index) => (
+                                    <li key={index}>{reason}</li>
+                                  ))}
+                                </ul>
+                              </Typography>
+                            </React.Fragment>
+                          }
+                        >
+                          <span style={{ cursor: "pointer" }}>
+                            {item.reason.join(', ')}
+                          </span>
                         </Tooltip>
                       ) : (
                         "---"
                       )}
                     </TableCell>
                   </TableRow>
-                ))}
+                ))
+                )}
               </TableBody>
           </Table>
         </TableContainer>
@@ -322,38 +423,22 @@ const PartnerContentDetails = () => {
           }}
         >
           <TablePagination
-            sx={{
-              color: "#fff",
-              backgroundColor: "#333",
-              ".MuiTablePagination-toolbar": {
-                padding: "0 8px",
-                minHeight: "36px",
-              },
-              ".MuiTablePagination-selectLabel, .MuiTablePagination-input, .MuiTablePagination-displayedRows": {
-                color: "#fff",
-              },
-              ".MuiTablePagination-select, .MuiTablePagination-actions": {
-                margin: 0,
-              },
-              ".MuiSvgIcon-root": {
-                color: "#fff",
-              },
-              ".MuiTablePagination-select": {
-                backgroundColor: "#424242",
-                borderRadius: "4px",
-                // padding: "2px 8px",
-              },
-              ".MuiTablePagination-actions button": {
-                padding: "4px",
-              },
-            }}
-            rowsPerPageOptions={[10, 25, 50]}
             component="div"
             count={totalCount}
-            rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            sx={{
+              color: "#e6e7e7",
+              ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows": {
+                color: "#e6e7e7",
+              },
+              ".MuiSelect-icon": {
+                color: "#e6e7e7",
+              },
+            }}
           />
         </Box>
       </Box>

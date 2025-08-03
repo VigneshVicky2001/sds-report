@@ -1,9 +1,22 @@
-// src/components/CustomPagination.jsx
 import React from "react";
-import { Box, IconButton, Typography, Select, MenuItem } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  Typography,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from "@mui/material";
 import { ArrowBackIos, ArrowForwardIos } from "@mui/icons-material";
 
-const CustomPagination = ({ count, page, rowsPerPage, onPageChange, onRowsPerPageChange }) => {
+const CustomPagination = ({
+  count,
+  page,
+  rowsPerPage,
+  onPageChange,
+  onRowsPerPageChange,
+}) => {
   const totalPages = Math.ceil(count / rowsPerPage);
 
   return (
@@ -18,35 +31,38 @@ const CustomPagination = ({ count, page, rowsPerPage, onPageChange, onRowsPerPag
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        padding: "4px 16px",
+        padding: "8px 16px",
         boxShadow: "0 -2px 5px rgba(0,0,0,0.5)",
         zIndex: 1000,
       }}
     >
-      {/* Rows per page selector */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <Typography variant="body2">Rows per page:</Typography>
-        <Select
-          value={rowsPerPage}
-          onChange={onRowsPerPageChange}
-          sx={{
-            backgroundColor: "#424242",
-            color: "#fff",
-            borderRadius: "4px",
-            ".MuiSvgIcon-root": { color: "#fff" },
-            "& .MuiSelect-select": { padding: "4px 24px 4px 8px" },
-          }}
-        >
-          {[5, 10, 25].map((option) => (
-            <MenuItem key={option} value={option}>
-              {option}
-            </MenuItem>
-          ))}
-        </Select>
+      <Box display="flex" alignItems="center">
+        <Typography variant="body2" sx={{ marginRight: 2 }}>
+          Total items: {count}
+        </Typography>
+
+        <FormControl variant="standard" sx={{ minWidth: 80 }}>
+          <InputLabel sx={{ color: "#ccc" }}>Rows</InputLabel>
+          <Select
+            value={rowsPerPage}
+            onChange={onRowsPerPageChange}
+            sx={{
+              backgroundColor: "#444",
+              color: "#fff",
+              border: "1px solid #555",
+              fontSize: "14px",
+            }}
+          >
+            {[10, 25, 50].map((num) => (
+              <MenuItem key={num} value={num}>
+                {num}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
-      {/* Pagination controls */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box display="flex" alignItems="center">
         <IconButton
           onClick={() => onPageChange(page - 1)}
           disabled={page === 0}
@@ -55,8 +71,8 @@ const CustomPagination = ({ count, page, rowsPerPage, onPageChange, onRowsPerPag
           <ArrowBackIos fontSize="small" />
         </IconButton>
 
-        <Typography variant="body2">
-          Page {page + 1} of {totalPages}
+        <Typography variant="body2" sx={{ margin: "0 8px" }}>
+          Page {totalPages === 0 ? 0 : page + 1} of {totalPages}
         </Typography>
 
         <IconButton

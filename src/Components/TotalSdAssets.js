@@ -135,7 +135,7 @@ const TotalVodAssets = () => {
       }}
     >
       <Typography variant="h4" sx={{ mb: 4, fontWeight: "bold", color: "#fff" }}>
-        Syndication Dashboard
+        Syndication
       </Typography>
 
       <Autocomplete

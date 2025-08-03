@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { getReport, downloadReport } from '../Service/ReportApi';
 import {
@@ -15,10 +15,11 @@ import {
   Typography,
   Box,
   Skeleton,
+  Button
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import ContentLoaderOverlay from './Common/CustomLoader';
-import { format } from 'date-fns'
+import CircularProgress from '@mui/material/CircularProgress';
 
 const partners = ['amazonprimevideo', 'bbcplayer', 'beinsportsconnect', 'cmgo', 'hbomax', 'iqiyi', 'mangotv', 'simplysouth', 'spotvnow', 'tvbanywhereplus', 'vidio', 'viu', 'wetv', 'youku', 'zee5'];
 const dayOptions = [1, 2, 3, 4, 5];
@@ -31,16 +32,48 @@ const RecentTrend = () => {
   const [partner, setPartner] = useState(routePartner || 'hbomax');
   const [days, setDays] = useState(parseInt(searchParams.get('days') || '5'));
   const [data, setData] = useState(null);
+  const [isReportReady, setIsReportReady] = useState(false);
+  const [isBottomVisible, setIsBottomVisible] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
 
+  const bottomRef = useRef(null);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsBottomVisible(entry.isIntersecting);
+      },
+      {
+        root: null,
+        threshold: 0.1,
+      }
+    );
+
+    if (bottomRef.current) {
+      observer.observe(bottomRef.current);
+    }
+
+    return () => {
+      if (bottomRef.current) {
+        observer.unobserve(bottomRef.current);
+      }
+    };
+  }, []);
   useEffect(() => {
     setLoading(true);
+    setIsReportReady(false); // Reset before fetching
+
     getReport({ partner, days })
       .then((res) => {
         setData(res);
-        setLoading(false);
+        // setLoading(false);
+        setIsReportReady(true); // Enable download
       })
       .catch((err) => {
         console.error('Error loading report:', err);
+        // setLoading(false);
+      })
+      .finally(() => {
         setLoading(false);
       });
   }, [partner, days]);
@@ -60,34 +93,45 @@ const RecentTrend = () => {
     }
   };
 
-  const downloadCSV = () => {
-    const url = `http://localhost:9090/report/generate-pdf-report?projectName=${partner}&days=${days}`;
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `report_${partner}_${days}days.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    // const rows = data?.rows.flatMap(row =>
-    //   Object.entries(row.dayCounts).map(([date, values]) => ({
-    //     Date: date,
-    //     ContentType: row.contentType,
-    //     Success: values.success,
-    //     Failure: values.failure,
-    //     NotModified: values.notModified,
-    //     Total: values.total,
-    //   }))
-    // );
 
-    // const csv =
-    //   'Date,ContentType,Success,Failure,NotModified,Total\n' +
-    //   rows.map(r => Object.values(r).join(',')).join('\n');
+  const handleDownload = async () => {
+    if (!isReportReady || downloading) return;
+    setDownloading(true);
 
-    // const blob = new Blob([csv], { type: 'text/csv' });
-    // const link = document.createElement('a');
-    // link.href = URL.createObjectURL(blob);
-    // link.download = `recent_trends_${partner}_${days}days.csv`;
-    // link.click();
+    try {
+      const url = `http://localhost:9090/report/generate-pdf-report?projectName=${partner}&days=${days}`;
+      console.log('Fetching:', url);
+      
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`Failed to download report: ${response.status} ${response.statusText}`);
+      }
+      const blob = await response.blob();
+      
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.setAttribute('download', `report_${partner}_${days}days.pdf`);
+
+      document.body.appendChild(link);
+      link.click();
+      
+      document.body.removeChild(link);
+      
+      console.log('Download triggered');
+      
+      setTimeout(() => {
+        console.log('Resetting download state');
+        setDownloading(false);
+        URL.revokeObjectURL(blobUrl);
+      }, 1000);
+
+    } catch (error) {
+      console.error('Download failed:', error);
+      setDownloading(false);
+      alert('Download failed. Please try again.');
+    }
   };
 
   const handlePartnerChange = (e) => {
@@ -192,70 +236,6 @@ const RecentTrend = () => {
     );
   };
 
-  const renderSkeletonTable = () => {
-  return (
-    <Paper
-      sx={{
-        mb: 4,
-        background: '#2a2a2a',
-        color: '#fff',
-        borderRadius: 2,
-        boxShadow: 3,
-        p: 2
-      }}
-    >
-      <Skeleton
-        variant="text"
-        animation="pulse"
-        width={200}
-        height={30}
-        sx={{ bgcolor: '#3a3a3a', mb: 2 }}
-      />
-      <Table
-        sx={{
-          '& th, & td': {
-            borderBottom: 'none',
-          },
-        }}
-      >
-        <TableHead>
-          <TableRow>
-            {[...Array(5)].map((_, i) => (
-              <TableCell key={i}>
-                <Skeleton
-                  animation="pulse"
-                  variant="text"
-                  width={100}
-                  height={20}
-                  sx={{ bgcolor: '#3a3a3a' }}
-                />
-              </TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {[...Array(3)].map((_, rowIdx) => (
-            <TableRow key={rowIdx}>
-              {[...Array(5)].map((_, colIdx) => (
-                <TableCell key={colIdx}>
-                  <Skeleton
-                    animation="pulse"
-                    variant="text"
-                    width={80}
-                    height={20}
-                    sx={{ bgcolor: '#3a3a3a' }}
-                  />
-                </TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Paper>
-  );
-};
-
-
   return (
     <Box
       sx={{
@@ -266,10 +246,6 @@ const RecentTrend = () => {
         margin: '0 auto',
       }}
     >
-      <Typography gutterBottom sx={{ fontSize: '30px', fontWeight: 'bold' }}>
-        Recent Trends
-      </Typography>
-
       <Box
         sx={{
           position: 'sticky',
@@ -289,6 +265,9 @@ const RecentTrend = () => {
           flexWrap: 'wrap',
         }}
       >
+        <Typography gutterBottom sx={{ fontSize: '25px', fontWeight: 'bold', mt: 1 }}>
+          Recent Trends
+        </Typography>
         <FormControl sx={{ minWidth: 180 }} size="small" variant="outlined">
           <InputLabel
             shrink
@@ -356,26 +335,47 @@ const RecentTrend = () => {
         </FormControl>
 
         <Box sx={{ ml: 'auto' }}>
-          <button
-            onClick={downloadCSV}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
+          <Button
+            variant="contained"
+            onClick={handleDownload}
+            disabled={loading || downloading}
+            startIcon={
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 22,
+                  height: 22,
+                }}
+              >
+                {downloading ? (
+                  <CircularProgress size={18} sx={{ color: '#fff' }} />
+                ) : (
+                  <DownloadIcon sx={{ fontSize: 20 }} />
+                )}
+              </Box>
+            }
+            sx={{
+              minWidth: '160px',
+              height: '44px',
+              borderRadius: '30px',
+              fontSize: '15px',
+              fontWeight: 600,
+              textTransform: 'none',
               backgroundColor: '#e26838',
-              color: '#fff',
-              padding: '6px 14px',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 500,
-              boxShadow: '0px 2px 6px rgba(0,0,0,0.5)',
-              transition: 'background-color 0.2s ease',
+              '&:hover': {
+                backgroundColor: '#d15a2c',
+              },
+              '&:disabled': {
+                backgroundColor: '#a0a0a0',
+                color: '#fff',
+                cursor: 'not-allowed',
+              },
             }}
           >
-            <DownloadIcon sx={{ fontSize: 20, mr: 1 }} />
             Download
-          </button>
+          </Button>
         </Box>
       </Box>
 
@@ -414,6 +414,41 @@ const RecentTrend = () => {
           No data available for the selected partner.
         </Typography>
       )}
+
+      {!isBottomVisible && !loading && data?.rows?.length > 0 && (
+        <Box
+          sx={{
+            position: 'fixed',
+            bottom: 30,
+            right: 30,
+            zIndex: 1000,
+          }}
+        >
+          <button
+            onClick={() =>
+              bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+            }
+            style={{
+              backgroundColor: '#e26838',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '50px',
+              padding: '14px 24px',
+              fontSize: '18px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+              cursor: 'pointer',
+              fontWeight: 600,
+              letterSpacing: '0.5px',
+              transition: 'transform 0.2s ease',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+            onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+          >
+            ↓
+          </button>
+        </Box>
+      )}
+      <div ref={bottomRef}></div>
     </Box>
   );
 };
