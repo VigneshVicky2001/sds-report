@@ -17,7 +17,7 @@ import {
   Skeleton,
 } from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
-import CircularDeterminate from './Common/CustomLoader';
+import ContentLoaderOverlay from './Common/CustomLoader';
 import { format } from 'date-fns'
 
 const partners = ['amazonprimevideo', 'bbcplayer', 'beinsportsconnect', 'cmgo', 'hbomax', 'iqiyi', 'mangotv', 'simplysouth', 'spotvnow', 'tvbanywhereplus', 'vidio', 'viu', 'wetv', 'youku', 'zee5'];
@@ -263,10 +263,10 @@ const RecentTrend = () => {
         padding: 3,
         // mt: 7,
         maxWidth: '1400px',
-        margin: '15px auto',
+        margin: '0 auto',
       }}
     >
-      <Typography gutterBottom sx={{ fontSize: '24px', fontWeight: 'bold' }}>
+      <Typography gutterBottom sx={{ fontSize: '30px', fontWeight: 'bold' }}>
         Recent Trends
       </Typography>
 
@@ -380,9 +380,26 @@ const RecentTrend = () => {
       </Box>
 
       {loading ? (
-        <>
-          {Array(2).fill().map((_, idx) => renderSkeletonTable())}
-        </>
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            // backgroundColor: 'rgba(18, 18, 18, 0.75)',
+            // borderRadius: '12px',
+            zIndex: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          >
+            <ContentLoaderOverlay />
+        </Box>
       ) : data?.rows?.length > 0 ? (
         data.rows.map((row) => renderTable(row.contentType, row.dayCounts))
       ) : (

@@ -9,6 +9,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { getSummaryList } from "../Service/SummaryApi";
 import CustomPagination from "./Common/CustomPagination";
 import dayjs from "dayjs";
+import ContentLoaderOverlay from './Common/CustomLoader';
 
 const partners = ['amazonprimevideo', 'bbcplayer', 'beinsportsconnect', 'cmgo', 'hbomax', 'iqiyi', 'mangotv', 'simplysouth', 'spotvnow', 'tvbanywhereplus', 'vidio', 'viu', 'wetv', 'youku', 'zee5'];
 
@@ -16,14 +17,15 @@ const PartnerContentDetails = () => {
   // const [searchParams] = useSearchParams();
   // const projectName = searchParams.get("projectName") || "";
   const [statusFilter, setStatusFilter] = useState("All");
-  const [contentTypes, setContentTypes] = useState("all");
+  const [contentTypes, setContentTypes] = useState("All");
   const [searchText, setSearchText] = useState("");
-  const [searchField, setSearchField] = useState("All");
+  const [searchField, setSearchField] = useState("all");
   const [projectName, setProjectName] = useState("amazonprimevideo"); //default
   const [data, setData] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [loading, setLoading] = useState(false);
 
   const fetchData = async () => {
     const payload = {
@@ -35,6 +37,7 @@ const PartnerContentDetails = () => {
       pageSize: rowsPerPage,
     };
 
+    setLoading(true);
     try {
       console.log(projectName);
       const response = await getSummaryList({ payload, projectName });
@@ -42,6 +45,8 @@ const PartnerContentDetails = () => {
       setTotalCount(response.total_elements || 0);
     } catch (error) {
       console.error("Failed to fetch data:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -61,12 +66,35 @@ const PartnerContentDetails = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
+      {loading && (
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              // backgroundColor: 'rgba(18, 18, 18, 0.75)',
+              // borderRadius: '12px',
+              zIndex: 20,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <ContentLoaderOverlay />
+          </Box>
+        )}
       <Box
         sx={{
           // height: "100vh",
+          position: 'relative',
           overflow: "hidden",
           padding: 3,
-          mt: 2,
+          mt: 0,
           // backgroundColor: "#212121",
           // paddingBottom: "30px",
         }}
@@ -140,7 +168,7 @@ const PartnerContentDetails = () => {
                   ".MuiSvgIcon-root": { color: "#fff" },
                 }}
               >
-                <MenuItem value="all">All</MenuItem>
+                <MenuItem value="All">All</MenuItem>
                 <MenuItem value="movie">Movie</MenuItem>
                 <MenuItem value="tvseries">TV Series</MenuItem>
                 <MenuItem value="tvseason">TV Season</MenuItem>
@@ -164,7 +192,7 @@ const PartnerContentDetails = () => {
                   ".MuiSvgIcon-root": { color: "#fff" },
                 }}
               >
-                <MenuItem value="All">All</MenuItem>
+                <MenuItem value="all">All</MenuItem>
                 <MenuItem value="contentId">Content ID</MenuItem>
                 <MenuItem value="contentTitle">Content Title</MenuItem>
               </Select>
@@ -223,12 +251,13 @@ const PartnerContentDetails = () => {
 
           </Box>
         </Box>
+        
         <TableContainer
           component={Paper}
           sx={{
             backgroundColor: "#333",
             boxShadow: "0px 0px 20px rgba(0, 0, 0, 0.5)",
-            maxHeight: "calc(100vh - 360px)",
+            maxHeight: "calc(100vh - 275px)",
             overflow: "auto"
           }}
         >

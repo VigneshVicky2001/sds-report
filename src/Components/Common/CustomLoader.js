@@ -1,27 +1,45 @@
-import * as React from 'react';
-import Stack from '@mui/material/Stack';
-import CircularProgress from '@mui/material/CircularProgress';
+import React from 'react';
+import { Box } from '@mui/material';
 
-export default function CircularDeterminate() {
-  const [progress, setProgress] = React.useState(0);
-
-  React.useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((prevProgress) => (prevProgress >= 100 ? 0 : prevProgress + 10));
-    }, 800);
-
-    return () => {
-      clearInterval(timer);
-    };
-  }, []);
-
+export default function ContentLoaderOverlay() {
   return (
-    <Stack spacing={2} direction="row">
-      <CircularProgress variant="determinate" value={25} />
-      <CircularProgress variant="determinate" value={50} />
-      <CircularProgress variant="determinate" value={75} />
-      <CircularProgress variant="determinate" value={100} />
-      <CircularProgress variant="determinate" value={progress} />
-    </Stack>
+    <Box
+      sx={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(0, 0, 0, 0.4)',
+        zIndex: 20,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        // borderRadius: '12px',
+        backdropFilter: 'blur(1px)',
+      }}
+    >
+      <Box
+        className="custom-spinner"
+        sx={{
+          // ml: 35,
+          width: 68,
+          height: 68,
+          border: '5px solid rgba(255,255,255,0.1)',
+          borderTop: '5px solid #ffffffff',
+          borderRadius: '50%',
+        }}
+      />
+      <style>{`
+        @keyframes spinEase {
+          0%   { transform: rotate(0deg);   }
+          50%  { transform: rotate(180deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .custom-spinner {
+          animation: spinEase 1s ease-in-out infinite;
+        }
+      `}</style>
+    </Box>
   );
 }
