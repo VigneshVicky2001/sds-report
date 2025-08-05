@@ -6,7 +6,7 @@ import {
 import { LocalizationProvider, MobileDateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useParams, useSearchParams, useLocation } from "react-router-dom";
-import { getSummaryList } from "../Service/SummaryApi";
+import { getSummaryList, downloadExcel } from "../Service/SummaryApi";
 import CustomPagination from "./Common/CustomPagination";
 import dayjs from "dayjs";
 import ContentLoaderOverlay from './Common/CustomLoader';
@@ -113,6 +113,15 @@ const PartnerContentDetails = () => {
     setPage(0);
     setSearchField(e.target.value);
   }, []);
+
+  const handleDownloadCSV = async() => {
+    try{
+      await downloadExcel({ projectName });
+      
+    } catch (error) {
+      
+    }
+  }
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -336,6 +345,37 @@ const PartnerContentDetails = () => {
               }}
             >
               Clear
+            </Button>
+
+            <Button
+              onClick={() => {
+                // setSearchField("all");
+                // setSearchText("");
+                // setStatusFilter("All");
+                // setContentTypes("All");
+                // setPage(0);
+                // fetchData();
+                handleDownloadCSV();
+
+              }}
+              variant="outlined"
+              size="small"
+              sx={{
+                color: "#fff",
+                borderColor: "#777",
+                minWidth: "60px",
+                height: "40px",
+                borderRadius: "6px",
+                boxShadow: "0 2px 6px rgba(0, 0, 0, 0.5)",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  backgroundColor: "#fff",
+                  color: "#000",
+                  borderColor: "#fff",
+                },
+              }}
+            >
+              Download
             </Button>
 
           </Box>
