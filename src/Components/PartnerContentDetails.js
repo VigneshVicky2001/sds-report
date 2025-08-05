@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, MenuItem, 
-  FormControl, Select, InputLabel, Box, TablePagination, Tooltip, Button
+  FormControl, Select, InputLabel, Box, TablePagination, Button
 } from "@mui/material";
 import { LocalizationProvider, MobileDateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -10,25 +10,33 @@ import { getSummaryList } from "../Service/SummaryApi";
 import CustomPagination from "./Common/CustomPagination";
 import dayjs from "dayjs";
 import ContentLoaderOverlay from './Common/CustomLoader';
+import { BootstrapTooltip } from "./Common/BlackToolTip";
 
 const partners = ['amazonprimevideo', 'bbcplayer', 'beinsportsconnect', 'cmgo', 'hbomax', 'iqiyi', 'mangotv', 'simplysouth', 'spotvnow', 'tvbanywhereplus', 'vidio', 'viu', 'wetv', 'youku', 'zee5'];
 
 const PartnerContentDetails = () => {
   // const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const state = location.state || {};
   // const projectName = searchParams.get("projectName") || "";
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [contentTypes, setContentTypes] = useState("All");
+  const initialProjectName = state.projectName || "amazonprimevideo";
+  const initialStatus = state.status || "All";
+  const initialContentType = state.contentType || "All";
+  const initialDate = state.date;
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [contentTypes, setContentTypes] = useState(initialContentType);
   const [searchText, setSearchText] = useState("");
   const [searchField, setSearchField] = useState("all");
-  const [projectName, setProjectName] = useState("amazonprimevideo"); //default
+  const [projectName, setProjectName] = useState(initialProjectName);
   const [data, setData] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const itemsPerPage = 10;
-  const location = useLocation();
+  // const itemsPerPage = 10;
   const [invalidSearchAttempt, setInvalidSearchAttempt] = useState(false);
+  const didMount = useRef(false);
+  const initialized = useRef(false);
   
   const rows = new Array(53).fill(0).map((_, i) => ({
     title: `Item ${i + 1}`,
@@ -63,7 +71,9 @@ const PartnerContentDetails = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    fetchData();
+    if (page === 0) {
+      fetchData();
+    }
   }, [page, rowsPerPage, statusFilter, contentTypes, projectName]);
 
   const handleChangePage = (_, newPage) => {
@@ -86,8 +96,22 @@ const PartnerContentDetails = () => {
   }, []);
 
   const handleProjectNameChange = useCallback((e) => {
+    setSearchField("all");
+    setSearchText("");
+    setStatusFilter("All");
+    setContentTypes("All");
+    setRowsPerPage(10);
     setPage(0);
     setProjectName(e.target.value);
+  }, []);
+
+  const handleSearchFieldChange = useCallback((e) => {
+    if(e.target.value === "all"){
+      setSearchText("");
+      fetchData();
+    }
+    setPage(0);
+    setSearchField(e.target.value);
   }, []);
 
   return (
@@ -212,7 +236,7 @@ const PartnerContentDetails = () => {
               <InputLabel sx={{ color: '#fff' }}>Search Field</InputLabel>
               <Select
                 value={searchField}
-                onChange={(e) => setSearchField(e.target.value)}
+                onChange={handleSearchFieldChange}
                 sx={{
                   backgroundColor: "#333",
                   color: "#fff",
@@ -236,11 +260,12 @@ const PartnerContentDetails = () => {
                 onFocus={() => {
                   if (searchField === "all") {
                     setInvalidSearchAttempt(true);
-                    setTimeout(() => setInvalidSearchAttempt(false), 5000);
+                    setTimeout(() => setInvalidSearchAttempt(false), 2000);
                   }
                 }}
                 onChange={(e) => {
                   if (searchField !== "all") {
+                    // setSearchField("all");
                     setSearchText(e.target.value);
                   }
                 }}
@@ -267,15 +292,15 @@ const PartnerContentDetails = () => {
                   fontSize: "14px",
                   outline: "none",
                   animation: invalidSearchAttempt ? "shake 0.3s" : "none",
-                  cursor: "text", // <--- ensures not visually disabled
-                  opacity: 1,      // <--- override grayed-out look
+                  cursor: "text",
+                  opacity: 1,
                 }}
               />
               <Typography
                 sx={{
                   color: "red",
                   fontSize: "12px",
-                  minHeight: "18px", // <--- reserves space even if not visible
+                  minHeight: "18px",
                   mt: 1,
                   visibility: invalidSearchAttempt ? "visible" : "hidden",
                 }}
@@ -384,12 +409,10 @@ const PartnerContentDetails = () => {
                     <TableCell sx={{ color: "#e6e7e7", border: "none" }}>{item.ing_st}</TableCell>
                     <TableCell sx={{ color: "#e6e7e7", border: "none" }}>
                       {Array.isArray(item.reason) && item.reason.length > 0 ? (
-                        <Tooltip
-                          arrow
-                          placement="top"
+                        <BootstrapTooltip
                           title={
                             <React.Fragment>
-                              <Typography sx={{ fontSize: 14 }}>
+                              <Typography sx={{ fontSize: 16 }}>
                                 <ul style={{ margin: 0, paddingLeft: 16 }}>
                                   {item.reason.map((reason, index) => (
                                     <li key={index}>{reason}</li>
@@ -398,11 +421,12 @@ const PartnerContentDetails = () => {
                               </Typography>
                             </React.Fragment>
                           }
+                          placement="top"
                         >
                           <span style={{ cursor: "pointer" }}>
                             {item.reason.join(', ')}
                           </span>
-                        </Tooltip>
+                        </BootstrapTooltip>
                       ) : (
                         "---"
                       )}

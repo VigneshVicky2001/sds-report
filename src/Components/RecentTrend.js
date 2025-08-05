@@ -30,7 +30,7 @@ const RecentTrend = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [partner, setPartner] = useState(routePartner || 'hbomax');
-  const [days, setDays] = useState(parseInt(searchParams.get('days') || '5'));
+  const [days, setDays] = useState(parseInt(searchParams.get('days') || '3'));
   const [data, setData] = useState(null);
   const [isReportReady, setIsReportReady] = useState(false);
   const [isBottomVisible, setIsBottomVisible] = useState(false);
@@ -38,6 +38,7 @@ const RecentTrend = () => {
   const [dataLoading, setDataLoading] = useState(true);
 
   const bottomRef = useRef(null);
+  
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -59,6 +60,7 @@ const RecentTrend = () => {
       }
     };
   }, []);
+
   useEffect(() => {
     setLoading(true);
     setIsReportReady(false); // Reset before fetching
@@ -66,12 +68,10 @@ const RecentTrend = () => {
     getReport({ partner, days })
       .then((res) => {
         setData(res);
-        // setLoading(false);
         setIsReportReady(true); // Enable download
       })
       .catch((err) => {
         console.error('Error loading report:', err);
-        // setLoading(false);
       })
       .finally(() => {
         setLoading(false);
@@ -93,6 +93,27 @@ const RecentTrend = () => {
     }
   };
 
+  // Function to handle row click navigation
+  const handleRowClick = (contentType, date, status) => {
+    // Map content type to the format expected by PartnerContentDetails
+    const contentTypeMap = {
+      'tvseries': 'tvseries',
+      'movie': 'movie', 
+      'tvseason': 'tvseason',
+      'tvepisode': 'tvepisode'
+    };
+
+    const mappedContentType = contentTypeMap[contentType.toLowerCase()] || contentType.toLowerCase();
+    
+    navigate(`/partner-details/${partner}/${status}`, {
+      state: {
+        projectName: partner,
+        status,
+        contentType: mappedContentType,
+        date
+      }
+    });
+  };
 
   const handleDownload = async () => {
     if (!isReportReady || downloading) return;
@@ -148,6 +169,8 @@ const RecentTrend = () => {
 
   const renderTable = (contentType, dayCounts) => {
     const dates = Object.keys(dayCounts);
+    const lastRowIndex = dates.length - 1;
+    
     return (
       <Paper
         key={contentType}
@@ -176,61 +199,148 @@ const RecentTrend = () => {
           {formatContentType(contentType)}
         </Typography>
         <Box sx={{ display: 'block', maxHeight: 400, overflowY: 'auto', overflowX: 'hidden' }}>
-        <Table
-          sx={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            '& th, & td': {
-              borderBottom: '1px solid #444',
-              color: '#fff',
-              textAlign: 'center',
-              // fontSize: '16px',
-              padding: '7px 0',
-            },
-            '& thead th': {
-              backgroundColor: '#2a2a2a',
-              // textAlign: 'center',
-              fontWeight: 'bold',
-              // fontSize: '17px'
-            },
-            '& tbody tr:hover': {
-              backgroundColor: '#383838',
-            },
-          }}
-        >
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ textAlign: 'left', fontSize: '19px', width: '20%' }}>Date</TableCell>
-              <TableCell sx={{ textAlign: 'right', fontSize: '19px', width: '20%' }}>Success</TableCell>
-              <TableCell sx={{ textAlign: 'right', fontSize: '19px', width: '20%' }}>Failure</TableCell>
-              <TableCell sx={{ textAlign: 'right', fontSize: '19px', width: '20%' }}>Not Modified</TableCell>
-              <TableCell sx={{ textAlign: 'right', fontSize: '19px', width: '20%' }}>Total</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody
+          <Table
             sx={{
-              columnWidth: '120px',
+              width: '100%',
+              borderCollapse: 'collapse',
+              '& th, & td': {
+                borderBottom: '1px solid #444',
+                color: '#fff',
+                textAlign: 'center',
+                padding: '7px 0',
+              },
+              '& thead th': {
+                backgroundColor: '#2a2a2a',
+                fontWeight: 'bold',
+              },
+              '& tbody tr:hover': {
+                backgroundColor: '#383838',
+              },
             }}
           >
-            {dates.map((date) => (
-              <TableRow
-                key={date}
-                sx={{
-                  '&:last-child td, &:last-child th': { border: 0 },
-                  '& td, & th': { borderBottom: '1px solid #444' },
-                  '&:last-child td': { borderBottom: 'none' },
-                  borderBottom: '1px solid #444',
-                }}
-              >
-                <TableCell sx={{ textAlign: 'left', fontSize: '17px' }}>{date}</TableCell>
-                <TableCell sx={{ textAlign: 'right', fontSize: '17px' }}>{dayCounts[date].success}</TableCell>
-                <TableCell sx={{ textAlign: 'right', fontSize: '17px' }}>{dayCounts[date].failure}</TableCell>
-                <TableCell sx={{ textAlign: 'right', fontSize: '17px' }}>{dayCounts[date].notModified}</TableCell>
-                <TableCell sx={{ textAlign: 'right', fontSize: '17px' }}>{dayCounts[date].total}</TableCell>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ textAlign: 'left', fontSize: '19px', width: '20%' }}>Date</TableCell>
+                <TableCell sx={{ textAlign: 'right', fontSize: '19px', width: '20%' }}>Success</TableCell>
+                <TableCell sx={{ textAlign: 'right', fontSize: '19px', width: '20%' }}>Failure</TableCell>
+                <TableCell sx={{ textAlign: 'right', fontSize: '19px', width: '20%' }}>Not Modified</TableCell>
+                <TableCell sx={{ textAlign: 'right', fontSize: '19px', width: '20%' }}>Total</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHead>
+            <TableBody
+              sx={{
+                columnWidth: '120px',
+              }}
+            >
+              {dates.map((date, index) => (
+                <TableRow
+                  key={date}
+                  sx={{
+                    '&:last-child td, &:last-child th': { border: 0 },
+                    '& td, & th': { borderBottom: '1px solid #444' },
+                    '&:last-child td': { borderBottom: 'none' },
+                    borderBottom: '1px solid #444',
+                    // Add special styling for the last row
+                    ...(index === lastRowIndex && {
+                      cursor: 'pointer',
+                      position: 'relative',
+                      '&:hover': {
+                        backgroundColor: '#4a4a4a !important',
+                        '& td': {
+                          backgroundColor: 'transparent',
+                        }
+                      },
+                      '&:after': {
+                        content: '"Click to view details"',
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        fontSize: '12px',
+                        color: '#aaa',
+                        fontStyle: 'italic',
+                        opacity: 0,
+                        transition: 'opacity 0.3s ease',
+                      },
+                      '&:hover:after': {
+                        opacity: 1,
+                      }
+                    })
+                  }}
+                  onClick={index === lastRowIndex ? () => {
+                    // For the last row, we'll create clickable cells for different statuses
+                    // This click handler can be used as a fallback
+                  } : undefined}
+                >
+                  <TableCell sx={{ textAlign: 'left', fontSize: '17px' }}>{date}</TableCell>
+                  <TableCell 
+                    sx={{ 
+                      textAlign: 'right', 
+                      fontSize: '17px',
+                      ...(index === lastRowIndex && dayCounts[date].success > 0 && {
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                          borderRadius: '4px'
+                        }
+                      })
+                    }}
+                    onClick={index === lastRowIndex && dayCounts[date].success > 0 ? 
+                      (e) => {
+                        e.stopPropagation();
+                        handleRowClick(contentType, date, 'Success');
+                      } : undefined
+                    }
+                  >
+                    {dayCounts[date].success}
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      textAlign: 'right', 
+                      fontSize: '17px',
+                      ...(index === lastRowIndex && dayCounts[date].failure > 0 && {
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: 'rgba(244, 67, 54, 0.2)',
+                          borderRadius: '4px'
+                        }
+                      })
+                    }}
+                    onClick={index === lastRowIndex && dayCounts[date].failure > 0 ? 
+                      (e) => {
+                        e.stopPropagation();
+                        handleRowClick(contentType, date, 'Failure');
+                      } : undefined
+                    }
+                  >
+                    {dayCounts[date].failure}
+                  </TableCell>
+                  <TableCell 
+                    sx={{ 
+                      textAlign: 'right', 
+                      fontSize: '17px',
+                      ...(index === lastRowIndex && dayCounts[date].notModified > 0 && {
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                          borderRadius: '4px'
+                        }
+                      })
+                    }}
+                    onClick={index === lastRowIndex && dayCounts[date].notModified > 0 ? 
+                      (e) => {
+                        e.stopPropagation();
+                        handleRowClick(contentType, date, 'NotModified');
+                      } : undefined
+                    }
+                  >
+                    {dayCounts[date].notModified}
+                  </TableCell>
+                  <TableCell sx={{ textAlign: 'right', fontSize: '17px' }}>{dayCounts[date].total}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </Box>
       </Paper>
     );
@@ -241,7 +351,6 @@ const RecentTrend = () => {
       sx={{
         color: '#fff',
         padding: 3,
-        // mt: 7,
         maxWidth: '1400px',
         margin: '0 auto',
       }}
@@ -390,15 +499,13 @@ const RecentTrend = () => {
             left: 0,
             width: '100%',
             height: '100%',
-            // backgroundColor: 'rgba(18, 18, 18, 0.75)',
-            // borderRadius: '12px',
             zIndex: 20,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
-          >
-            <ContentLoaderOverlay />
+        >
+          <ContentLoaderOverlay />
         </Box>
       ) : data?.rows?.length > 0 ? (
         data.rows.map((row) => renderTable(row.contentType, row.dayCounts))
