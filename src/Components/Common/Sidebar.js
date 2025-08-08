@@ -17,7 +17,7 @@ const Sidebar = ({ open, isMinimized }) => {
     }
     return location.pathname === path;
   };
-  const drawerWidth = isMinimized ? 70 : 250;
+  const drawerWidth = isMinimized ? 70 : 200;
   const navigate = useNavigate();
 
   const navigateToPage = (path) => {
@@ -76,7 +76,7 @@ const Sidebar = ({ open, isMinimized }) => {
               transition: 'all 0.3s ease',
             }}
           >
-            <ListItemIcon
+            {/* <ListItemIcon
               sx={{
                 minWidth: 0,
                 mr: isMinimized ? 0 : 2,
@@ -86,7 +86,7 @@ const Sidebar = ({ open, isMinimized }) => {
               }}
             >
               {item.icon}
-            </ListItemIcon>
+            </ListItemIcon> */}
             {!isMinimized && (
               <ListItemText
                 primary={item.label}

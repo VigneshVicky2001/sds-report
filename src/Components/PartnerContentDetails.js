@@ -115,11 +115,13 @@ const PartnerContentDetails = () => {
   }, []);
 
   const handleDownloadCSV = async() => {
+    setLoading(true);
     try{
       await downloadExcel({ projectName });
-      
     } catch (error) {
-      
+      console.error("Failed:", error);
+    } finally {
+      setLoading(false);
     }
   }
 
