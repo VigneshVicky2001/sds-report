@@ -32,6 +32,7 @@ const PartnerContentDetails = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [loading, setLoading] = useState(false);
+  const [fetchedFromDateTime, setFetchedFromDateTime] = useState("");
   const [page, setPage] = useState(1);
   // const itemsPerPage = 10;
   const [invalidSearchAttempt, setInvalidSearchAttempt] = useState(false);
@@ -379,6 +380,22 @@ const PartnerContentDetails = () => {
             >
               Download
             </Button>
+            <Typography
+              size= "small"
+              sx={{
+                fontWeight: "bold",
+                color: "#ccc",
+                marginLeft: "200px",
+                // fontWeight: "bold",
+                // marginRight: "100px",
+                // backgroundColor: "#1e1e1e",
+                padding: "6px 12px",
+                borderRadius: "4px",
+                // boxShadow: "0 0 6px rgba(0,0,0,0.3)",
+              }}
+            >
+              Fetched from date: {fetchedFromDateTime ? `Date: ${fetchedFromDateTime}` : ""}
+            </Typography>
 
           </Box>
         </Box>

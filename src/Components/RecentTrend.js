@@ -240,14 +240,15 @@ const RecentTrend = () => {
                     '& td, & th': { borderBottom: '1px solid #444' },
                     '&:last-child td': { borderBottom: 'none' },
                     borderBottom: '1px solid #444',
-                    // Add special styling for the last row
+                    borderRadius: "0px",
                     ...(index === lastRowIndex && {
                       cursor: 'pointer',
                       position: 'relative',
-                      '&:hover': {
-                        backgroundColor: '#4a4a4a !important',
-                        '& td': {
-                          backgroundColor: 'transparent',
+                      '& td': {
+                        position: 'relative',
+                        transition: 'background-color 0.3s ease',
+                        '&:hover': {
+                          backgroundColor: '#4a4a4a !important',
                         }
                       },
                       '&:after': {
@@ -267,10 +268,6 @@ const RecentTrend = () => {
                       }
                     })
                   }}
-                  onClick={index === lastRowIndex ? () => {
-                    // For the last row, we'll create clickable cells for different statuses
-                    // This click handler can be used as a fallback
-                  } : undefined}
                 >
                   <TableCell sx={{ textAlign: 'left', fontSize: '17px' }}>{date}</TableCell>
                   <TableCell 
@@ -336,7 +333,27 @@ const RecentTrend = () => {
                   >
                     {dayCounts[date].notModified}
                   </TableCell>
-                  <TableCell sx={{ textAlign: 'right', fontSize: '17px' }}>{dayCounts[date].total}</TableCell>
+                  <TableCell 
+                    sx={{ 
+                      textAlign: 'right', 
+                      fontSize: '17px',
+                      ...(index === lastRowIndex && dayCounts[date].total > 0 && {
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                          borderRadius: '4px'
+                        }
+                      })
+                    }}
+                    onClick={index === lastRowIndex && dayCounts[date].total > 0 ? 
+                      (e) => {
+                        e.stopPropagation();
+                        handleRowClick(contentType, date, 'All');
+                      } : undefined
+                    }
+                  >
+                    {dayCounts[date].total}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
