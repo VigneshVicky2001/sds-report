@@ -4,7 +4,7 @@ import { createTheme, ThemeProvider } from '@mui/material';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Dashboard from './Components/Dashboard';
 import Sidebar from './Components/Common/Sidebar';
-import PartnerContentDetails from './Components/PartnerContentDetails';
+import PartnerContentDetails from './Components/PartnerDetails/PartnerContentDetails';
 import Login from './Components/Login';
 import Header from './Components/Common/Header';
 import Footer from './Components/Common/Footer';
@@ -62,9 +62,7 @@ function App() {
               <Route path="/sds-dashboard" element={<TotalVodAssets />} />
               <Route
                 path="/partner-details"
-                element={
-                  <Navigate to="/partner-details/amazonprimevideo/notModified" />
-                }
+                element={<PartnerContentDetails/>}
               />
               <Route
                 path="/partner-details/:partnerName/:status"

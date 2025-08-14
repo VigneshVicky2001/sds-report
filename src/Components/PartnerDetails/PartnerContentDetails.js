@@ -3,14 +3,12 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography, MenuItem, 
   FormControl, Select, InputLabel, Box, TablePagination, Button
 } from "@mui/material";
-import { LocalizationProvider, MobileDateTimePicker } from "@mui/x-date-pickers";
+import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { useParams, useSearchParams, useLocation } from "react-router-dom";
-import { getSummaryList, downloadExcel } from "../Service/SummaryApi";
-import CustomPagination from "./Common/CustomPagination";
-import dayjs from "dayjs";
-import ContentLoaderOverlay from './Common/CustomLoader';
-import { BootstrapTooltip } from "./Common/BlackToolTip";
+import { useLocation } from "react-router-dom";
+import { getSummaryList, downloadExcel } from "../../Service/SummaryApi";
+import ContentLoaderOverlay from '../Common/CustomLoader';
+import { BootstrapTooltip } from "../Common/BlackToolTip";
 
 const partners = ['amazonprimevideo', 'bbcplayer', 'beinsportsconnect', 'cmgo', 'hbomax', 'iqiyi', 'mangotv', 'simplysouth', 'spotvnow', 'tvbanywhereplus', 'vidio', 'viu', 'wetv', 'youku', 'zee5'];
 
@@ -19,7 +17,7 @@ const PartnerContentDetails = () => {
   const location = useLocation();
   const state = location.state || {};
   // const projectName = searchParams.get("projectName") || "";
-  const initialProjectName = state.projectName || "amazonprimevideo";
+  const initialProjectName = state.projectName;
   const initialStatus = state.status || "All";
   const initialContentType = state.contentType || "All";
   const initialDate = state.date;
@@ -38,13 +36,18 @@ const PartnerContentDetails = () => {
   const [invalidSearchAttempt, setInvalidSearchAttempt] = useState(false);
   const didMount = useRef(false);
   const initialized = useRef(false);
-  
+  const [isFirstRender, setIsFirstRender] = useState(false);
+  const [apiHit, setApiHit] = useState(false);
+  const [isFileNotFound, setIsFileNotFound] = useState(true);
+  const [isContentNotFound, setIsContentNotFound] = useState(true);
+
   const rows = new Array(53).fill(0).map((_, i) => ({
     title: `Item ${i + 1}`,
     status: "Active",
   }));
 
   const fetchData = async () => {
+    setApiHit(true);
     const payload = {
       status: statusFilter ? [statusFilter] : [],
       contentTypes: contentTypes ? [contentTypes] : [],
@@ -58,6 +61,9 @@ const PartnerContentDetails = () => {
     try {
       console.log(projectName);
       const response = await getSummaryList({ payload, projectName });
+      setFetchedFromDateTime(response.fetchedFromDateTime);
+      setIsFileNotFound(response.noFileFound);
+      setIsContentNotFound(response.noContentFoundForFilter);
       setData(response.data || []);
       setTotalCount(response.total_elements || 0);
     } catch (error) {
@@ -72,7 +78,7 @@ const PartnerContentDetails = () => {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (page === 0) {
+    if (page === 0 && projectName) {
       fetchData();
     }
   }, [page, rowsPerPage, statusFilter, contentTypes, projectName]);
@@ -183,7 +189,7 @@ const PartnerContentDetails = () => {
             }}
           >
             <FormControl sx={{ minWidth: 200 }} size="small">
-              <InputLabel sx={{ color: "#fff" }}>Partner</InputLabel>
+              <InputLabel sx={{ color: "#fff" }}>Select a Partner</InputLabel>
               <Select
                 value={projectName}
                 onChange={handleProjectNameChange}
@@ -383,7 +389,7 @@ const PartnerContentDetails = () => {
             <Typography
               size= "small"
               sx={{
-                fontWeight: "bold",
+                // fontWeight: "bold",
                 color: "#ccc",
                 marginLeft: "200px",
                 // fontWeight: "bold",
@@ -394,7 +400,7 @@ const PartnerContentDetails = () => {
                 // boxShadow: "0 0 6px rgba(0,0,0,0.3)",
               }}
             >
-              Fetched from date: {fetchedFromDateTime ? `Date: ${fetchedFromDateTime}` : ""}
+              Fetched from date: {fetchedFromDateTime ? `${fetchedFromDateTime}` : ""}
             </Typography>
 
           </Box>
@@ -428,7 +434,7 @@ const PartnerContentDetails = () => {
               </TableRow>
             </TableHead>
               <TableBody>
-                {(data.length === 0 && !loading ) ? (
+                {!apiHit ? (
                   <TableRow
                     sx={{
                       "&:last-child td": { borderBottom: 0 },
@@ -443,10 +449,53 @@ const PartnerContentDetails = () => {
                           color: '#aaa'
                         }}
                       >
-                        No data available for the selected partner.
+                        Please select a partner.
                       </Typography>
                     </TableCell>
                   </TableRow>
+                ) : (data.length === 0 && !loading) ? (
+                  <>
+                  {isFileNotFound ? (
+                    <TableRow
+                      sx={{
+                        "&:last-child td": { borderBottom: 0 },
+                      }}
+                    >
+                      <TableCell colSpan={5} align="center" sx={{ color: "#bbb", py: 5, paddingBottom: "-20px" }}>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            textAlign: 'center',
+                            // mt: 5,
+                            color: '#aaa'
+                          }}
+                        >
+                          No data available for the selected partner.
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <TableRow
+                      sx={{
+                        "&:last-child td": { borderBottom: 0 },
+                      }}
+                    >
+                      <TableCell colSpan={5} align="center" sx={{ color: "#bbb", py: 5, paddingBottom: "-20px" }}>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            textAlign: 'center',
+                            // mt: 5,
+                            color: '#aaa'
+                          }}
+                        >
+                          No data available for the selected partner.
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )
+                  }
+                  </>
                 ) : (
                 data.map((item, index) => (
                   <TableRow
@@ -492,7 +541,8 @@ const PartnerContentDetails = () => {
                     </TableCell>
                   </TableRow>
                 ))
-                )}
+                )
+                }
               </TableBody>
           </Table>
         </TableContainer>

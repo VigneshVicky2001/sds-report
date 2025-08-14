@@ -232,7 +232,10 @@ const RecentTrend = () => {
                 columnWidth: '120px',
               }}
             >
-              {dates.map((date, index) => (
+              {dates.map((date, index) => {
+                const dayData = dayCounts[date];
+                const isNoData = dayData.noData;
+                return (
                 <TableRow
                   key={date}
                   sx={{
@@ -252,7 +255,7 @@ const RecentTrend = () => {
                         }
                       },
                       '&:after': {
-                        content: '"Click to view details"',
+                        // content: '"Click to view details"',
                         position: 'absolute',
                         right: '10px',
                         top: '50%',
@@ -269,93 +272,125 @@ const RecentTrend = () => {
                     })
                   }}
                 >
-                  <TableCell sx={{ textAlign: 'left', fontSize: '17px' }}>{date}</TableCell>
-                  <TableCell 
-                    sx={{ 
-                      textAlign: 'right', 
-                      fontSize: '17px',
-                      ...(index === lastRowIndex && dayCounts[date].success > 0 && {
-                        cursor: 'pointer',
-                        '&:hover': {
-                          backgroundColor: 'rgba(76, 175, 80, 0.2)',
-                          borderRadius: '4px'
+                  {isNoData? (
+                    <>
+                    <TableCell
+                        colSpan={1}
+                        sx={{
+                          textAlign: 'center',
+                          fontSize: '17px',
+                          color: '#aaa',
+                          // fontStyle: 'italic',
+                          // backgroundColor: '#2a2a2a',
+                        }}
+                      >
+                        {date}
+                      </TableCell>
+                      <TableCell
+                        colSpan={4}
+                        sx={{
+                          textAlign: 'center',
+                          fontSize: '17px',
+                          color: '#aaa',
+                          fontStyle: 'italic',
+                          // backgroundColor: '#2a2a2a',
+                        }}
+                      >
+                        No data available
+                      </TableCell>
+                    </>
+                  ) : (
+                    <>
+                      <TableCell sx={{ textAlign: 'left', fontSize: '17px' }}>{date}</TableCell>
+                      <TableCell 
+                        sx={{ 
+                          textAlign: 'right', 
+                          fontSize: '17px',
+                          ...(index === lastRowIndex && dayCounts[date].success > 0 && {
+                            cursor: 'pointer',
+                            '&:hover': {
+                              backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                              borderRadius: '4px'
+                            }
+                          })
+                        }}
+                        onClick={index === lastRowIndex && dayCounts[date].success > 0 ? 
+                          (e) => {
+                            e.stopPropagation();
+                            handleRowClick(contentType, date, 'Success');
+                          } : undefined
                         }
-                      })
-                    }}
-                    onClick={index === lastRowIndex && dayCounts[date].success > 0 ? 
-                      (e) => {
-                        e.stopPropagation();
-                        handleRowClick(contentType, date, 'Success');
-                      } : undefined
-                    }
-                  >
-                    {dayCounts[date].success}
-                  </TableCell>
-                  <TableCell 
-                    sx={{ 
-                      textAlign: 'right', 
-                      fontSize: '17px',
-                      ...(index === lastRowIndex && dayCounts[date].failure > 0 && {
-                        cursor: 'pointer',
-                        '&:hover': {
-                          backgroundColor: 'rgba(244, 67, 54, 0.2)',
-                          borderRadius: '4px'
+                      >
+                        {dayCounts[date].success}
+                      </TableCell>
+                      <TableCell 
+                        sx={{ 
+                          textAlign: 'right', 
+                          fontSize: '17px',
+                          ...(index === lastRowIndex && dayCounts[date].failure > 0 && {
+                            cursor: 'pointer',
+                            '&:hover': {
+                              backgroundColor: 'rgba(244, 67, 54, 0.2)',
+                              borderRadius: '4px'
+                            }
+                          })
+                        }}
+                        onClick={index === lastRowIndex && dayCounts[date].failure > 0 ? 
+                          (e) => {
+                            e.stopPropagation();
+                            handleRowClick(contentType, date, 'Failure');
+                          } : undefined
                         }
-                      })
-                    }}
-                    onClick={index === lastRowIndex && dayCounts[date].failure > 0 ? 
-                      (e) => {
-                        e.stopPropagation();
-                        handleRowClick(contentType, date, 'Failure');
-                      } : undefined
-                    }
-                  >
-                    {dayCounts[date].failure}
-                  </TableCell>
-                  <TableCell 
-                    sx={{ 
-                      textAlign: 'right', 
-                      fontSize: '17px',
-                      ...(index === lastRowIndex && dayCounts[date].notModified > 0 && {
-                        cursor: 'pointer',
-                        '&:hover': {
-                          backgroundColor: 'rgba(255, 193, 7, 0.2)',
-                          borderRadius: '4px'
+                      >
+                        {dayCounts[date].failure}
+                      </TableCell>
+                      <TableCell 
+                        sx={{ 
+                          textAlign: 'right', 
+                          fontSize: '17px',
+                          ...(index === lastRowIndex && dayCounts[date].notModified > 0 && {
+                            cursor: 'pointer',
+                            '&:hover': {
+                              backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                              borderRadius: '4px'
+                            }
+                          })
+                        }}
+                        onClick={index === lastRowIndex && dayCounts[date].notModified > 0 ? 
+                          (e) => {
+                            e.stopPropagation();
+                            handleRowClick(contentType, date, 'NotModified');
+                          } : undefined
                         }
-                      })
-                    }}
-                    onClick={index === lastRowIndex && dayCounts[date].notModified > 0 ? 
-                      (e) => {
-                        e.stopPropagation();
-                        handleRowClick(contentType, date, 'NotModified');
-                      } : undefined
-                    }
-                  >
-                    {dayCounts[date].notModified}
-                  </TableCell>
-                  <TableCell 
-                    sx={{ 
-                      textAlign: 'right', 
-                      fontSize: '17px',
-                      ...(index === lastRowIndex && dayCounts[date].total > 0 && {
-                        cursor: 'pointer',
-                        '&:hover': {
-                          backgroundColor: 'rgba(255, 193, 7, 0.2)',
-                          borderRadius: '4px'
+                      >
+                        {dayCounts[date].notModified}
+                      </TableCell>
+                      <TableCell 
+                        sx={{ 
+                          textAlign: 'right', 
+                          fontSize: '17px',
+                          ...(index === lastRowIndex && dayCounts[date].total > 0 && {
+                            cursor: 'pointer',
+                            '&:hover': {
+                              backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                              borderRadius: '4px'
+                            }
+                          })
+                        }}
+                        onClick={index === lastRowIndex && dayCounts[date].total > 0 ? 
+                          (e) => {
+                            e.stopPropagation();
+                            handleRowClick(contentType, date, 'All');
+                          } : undefined
                         }
-                      })
-                    }}
-                    onClick={index === lastRowIndex && dayCounts[date].total > 0 ? 
-                      (e) => {
-                        e.stopPropagation();
-                        handleRowClick(contentType, date, 'All');
-                      } : undefined
-                    }
-                  >
-                    {dayCounts[date].total}
-                  </TableCell>
+                      >
+                        {dayCounts[date].total}
+                      </TableCell>
+                    </>
+                  )}
                 </TableRow>
-              ))}
+                );
+                })}
             </TableBody>
           </Table>
         </Box>
