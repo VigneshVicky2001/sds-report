@@ -437,7 +437,7 @@ const PartnerContentDetails = () => {
                 // boxShadow: "0 0 6px rgba(0,0,0,0.3)",
               }}
             >
-              Fetched from date: {fetchedFromDateTime ? `${fetchedFromDateTime}` : ""}
+              Fetched from: {fetchedFromDateTime ? `${fetchedFromDateTime}` : ""}
             </Typography>
 
           </Box>
