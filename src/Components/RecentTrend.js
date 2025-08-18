@@ -591,19 +591,23 @@ const RecentTrend = () => {
               backgroundColor: '#e26838',
               color: '#fff',
               border: 'none',
-              borderRadius: '50px',
-              padding: '14px 24px',
-              fontSize: '18px',
+              width: '63px',
+              height: '60px',
+              borderRadius: '50%',
+              fontSize: '28px',
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
               cursor: 'pointer',
               fontWeight: 600,
               letterSpacing: '0.5px',
               transition: 'transform 0.2s ease',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
             }}
             onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
             onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
           >
-            ↓
+            ⯆
           </button>
         </Box>
       )}
