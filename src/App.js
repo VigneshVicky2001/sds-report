@@ -58,9 +58,10 @@ function App() {
           >
             <Routes>
               <Route path="/" element={<Login />} />
-              <Route index path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/sds-dashboard" element={<TotalVodAssets />} />
               <Route
+                index
                 path="/partner-details"
                 element={<PartnerContentDetails/>}
               />

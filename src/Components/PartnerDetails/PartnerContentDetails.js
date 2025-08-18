@@ -40,21 +40,26 @@ const PartnerContentDetails = () => {
   const [apiHit, setApiHit] = useState(false);
   const [isFileNotFound, setIsFileNotFound] = useState(true);
   const [isContentNotFound, setIsContentNotFound] = useState(true);
+  const [emptySearchAttempt, setEmptySearchAttempt] = useState(false);
+  const [skipFetch, setSkipFetch] = useState(false);
 
   const rows = new Array(53).fill(0).map((_, i) => ({
     title: `Item ${i + 1}`,
     status: "Active",
   }));
 
-  const fetchData = async () => {
+  const fetchData = async (customParams = {}) => {
     setApiHit(true);
+    if ((searchField === "contentId" || searchField === "contentTitle") && searchText.trim() === "") {
+      return;
+    }
     const payload = {
-      status: statusFilter ? [statusFilter] : [],
-      contentTypes: contentTypes ? [contentTypes] : [],
-      searchText,
-      searchField,
-      pageNumber: page + 1,
-      pageSize: rowsPerPage,
+      status: customParams.statusFilter || statusFilter ? [customParams.statusFilter || statusFilter] : [],
+      contentTypes: customParams.contentTypes || contentTypes ? [customParams.contentTypes || contentTypes] : [],
+      searchText: customParams.searchText !== undefined ? customParams.searchText : searchText,
+      searchField: customParams.searchField || searchField,
+      pageNumber: (customParams.page !== undefined ? customParams.page : page) + 1,
+      pageSize: customParams.rowsPerPage || rowsPerPage,
     };
 
     setLoading(true);
@@ -95,12 +100,20 @@ const PartnerContentDetails = () => {
   const handleStatusChange = useCallback((e) => {
     setPage(0);
     setStatusFilter(e.target.value);
-  }, []);
+    
+    if (searchField !== "all" && searchText.trim() === "") {
+      setSearchField("all");
+    }
+  }, [searchField, searchText]);
 
   const handleContentTypeChange = useCallback((e) => {
     setPage(0);
     setContentTypes(e.target.value);
-  }, []);
+    
+    if (searchField !== "all" && searchText.trim() === "") {
+      setSearchField("all");
+    }
+  }, [searchField, searchText]);
 
   const handleProjectNameChange = useCallback((e) => {
     setSearchField("all");
@@ -113,13 +126,24 @@ const PartnerContentDetails = () => {
   }, []);
 
   const handleSearchFieldChange = useCallback((e) => {
-    if(e.target.value === "all"){
-      setSearchText("");
-      fetchData();
-    }
+    const value = e.target.value;
     setPage(0);
-    setSearchField(e.target.value);
-  }, []);
+    setSearchField(value);
+
+    if (value === "all") {
+      if (searchText.trim() !== "") {
+        setSearchText("");
+        fetchData({
+          searchField: "all",
+          searchText: "",
+          page: 0
+        });
+      } else {
+        setSkipFetch(true);
+        setSearchText("");
+      }
+    }
+  }, [searchText]);
 
   const handleDownloadCSV = async() => {
     setLoading(true);
@@ -292,6 +316,9 @@ const PartnerContentDetails = () => {
                     if (searchField === "all") {
                       setInvalidSearchAttempt(true);
                       setTimeout(() => setInvalidSearchAttempt(false), 1000);
+                    } else if (searchText.trim() === "") {
+                      setEmptySearchAttempt(true);
+                      setTimeout(() => setEmptySearchAttempt(false), 1000);
                     } else {
                       setPage(0);
                       fetchData();
@@ -305,11 +332,11 @@ const PartnerContentDetails = () => {
                   borderRadius: "6px",
                   backgroundColor: "#444",
                   color: "white",
-                  border: `1px solid ${invalidSearchAttempt ? "red" : "#777"}`,
+                  border: `1px solid ${(invalidSearchAttempt || emptySearchAttempt) ? "red" : "#777"}`,
                   minWidth: "300px",
                   fontSize: "14px",
                   outline: "none",
-                  animation: invalidSearchAttempt ? "shake 0.3s" : "none",
+                  animation: (invalidSearchAttempt || emptySearchAttempt) ? "shake 0.3s" : "none",
                   cursor: "text",
                   opacity: 1,
                 }}
@@ -320,10 +347,12 @@ const PartnerContentDetails = () => {
                   fontSize: "12px",
                   minHeight: "18px",
                   mt: 1,
-                  visibility: invalidSearchAttempt ? "visible" : "hidden",
+                  visibility: (invalidSearchAttempt || emptySearchAttempt) ? "visible" : "hidden",
                 }}
               >
-                Please select a valid search field
+                {invalidSearchAttempt
+                  ? "Please select a valid search field"
+                  : "Input can't be empty"}
               </Typography>
             </Box>
 
@@ -334,7 +363,15 @@ const PartnerContentDetails = () => {
                 setStatusFilter("All");
                 setContentTypes("All");
                 setPage(0);
-                fetchData();
+
+                // Call fetchData with the cleared values immediately
+                fetchData({
+                  searchField: "all",
+                  searchText: "",
+                  statusFilter: "All",
+                  contentTypes: "All",
+                  page: 0
+                });
               }}
               variant="outlined"
               size="small"
@@ -454,8 +491,6 @@ const PartnerContentDetails = () => {
                     </TableCell>
                   </TableRow>
                 ) : (data.length === 0 && !loading) ? (
-                  <>
-                  {isFileNotFound ? (
                     <TableRow
                       sx={{
                         "&:last-child td": { borderBottom: 0 },
@@ -470,32 +505,14 @@ const PartnerContentDetails = () => {
                             color: '#aaa'
                           }}
                         >
-                          No data available for the selected partner.
+                          {isFileNotFound
+                            ? "No data available for the selected partner"
+                            : isContentNotFound
+                            ? "No content found"
+                            : "No content found"}
                         </Typography>
                       </TableCell>
                     </TableRow>
-                  ) : (
-                    <TableRow
-                      sx={{
-                        "&:last-child td": { borderBottom: 0 },
-                      }}
-                    >
-                      <TableCell colSpan={5} align="center" sx={{ color: "#bbb", py: 5, paddingBottom: "-20px" }}>
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            textAlign: 'center',
-                            // mt: 5,
-                            color: '#aaa'
-                          }}
-                        >
-                          No data available for the selected partner.
-                        </Typography>
-                      </TableCell>
-                    </TableRow>
-                  )
-                  }
-                  </>
                 ) : (
                 data.map((item, index) => (
                   <TableRow
