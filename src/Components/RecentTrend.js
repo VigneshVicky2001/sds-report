@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { getReport, downloadReport } from '../Service/ReportApi';
+import { getPartners } from '../Service/SummaryApi';
 import {
   FormControl,
   InputLabel,
@@ -21,13 +22,16 @@ import DownloadIcon from '@mui/icons-material/Download';
 import ContentLoaderOverlay from './Common/CustomLoader';
 import CircularProgress from '@mui/material/CircularProgress';
 
-const partners = ['amazonprimevideo', 'bbcplayer', 'beinsportsconnect', 'cmgo', 'hbomax', 'iqiyi', 'mangotv', 'simplysouth', 'spotvnow', 'tvbanywhereplus', 'vidio', 'viu', 'wetv', 'youku', 'zee5'];
+const partners = ['amazonprimevideo', 'bbcplayer', 'beinsportsconnect', 'cmgo', 'disneyplus','hbomax', 'iqiyi', 'mangotv', 'simplysouth', 'spotvnow', 'tvbanywhereplus', 'vidio', 'viu', 'wetv', 'youku', 'zee5'];
 const dayOptions = [1, 2, 3, 4, 5];
 
 const RecentTrend = () => {
   const { partner: routePartner } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  const initialProjectName = routePartner || null;
+
   const [loading, setLoading] = useState(true);
   const [partner, setPartner] = useState(routePartner || 'hbomax');
   const [days, setDays] = useState(parseInt(searchParams.get('days') || '3'));
@@ -37,7 +41,41 @@ const RecentTrend = () => {
   const [downloading, setDownloading] = useState(false);
   const [dataLoading, setDataLoading] = useState(true);
 
+    // NEW: partners state
+    const [partnersList, setPartnersList] = useState([]);
+    const [partnersLoading, setPartnersLoading] = useState(false);
+    const [partnersError, setPartnersError] = useState(null);
+
   const bottomRef = useRef(null);
+
+  // fetch partners on mount
+  useEffect(() => {
+    let mounted = true;
+    const loadPartners = async () => {
+      setPartnersLoading(true);
+      setPartnersError(null);
+      try {
+        const resp = await getPartners();
+        // expecting shape: { projects: [...] }
+        const list = Array.isArray(resp?.projects) ? [...resp.projects] : [];
+        // ensure initialProjectName is present in list (so pre-selected value is shown)
+        if (initialProjectName && !list.includes(initialProjectName)) {
+          list.unshift(initialProjectName);
+        }
+        if (mounted) setPartnersList(list);
+      } catch (err) {
+        console.error("Failed to fetch partners:", err);
+        if (mounted) setPartnersError(err);
+      } finally {
+        if (mounted) setPartnersLoading(false);
+      }
+    };
+
+    loadPartners();
+    return () => {
+      mounted = false;
+    };
+  }, [initialProjectName]);
   
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -430,15 +468,7 @@ const RecentTrend = () => {
           Recent Trends
         </Typography>
         <FormControl sx={{ minWidth: 180 }} size="small" variant="outlined">
-          <InputLabel
-            shrink
-            sx={{
-              color: '#fff',
-              '&.Mui-focused': { color: '#fff' },
-            }}
-          >
-            Partner
-          </InputLabel>
+          <InputLabel shrink sx={{ color: '#fff', '&.Mui-focused': { color: '#fff' } }}>Partner</InputLabel>
           <Select
             value={partner}
             onChange={handlePartnerChange}
@@ -448,17 +478,22 @@ const RecentTrend = () => {
               color: '#fff',
               '.MuiSvgIcon-root': { color: '#fff' },
               '& .MuiOutlinedInput-notchedOutline': { borderColor: '#555' },
-              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                borderColor: '#888',
-              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#888' },
             }}
             inputProps={{ 'aria-label': 'Partner' }}
           >
-            {partners.map((p) => (
-              <MenuItem key={p} value={p}>
-                {p}
-              </MenuItem>
+            {partnersLoading && <MenuItem value="" disabled>Loading partners...</MenuItem>}
+            {partnersError && <MenuItem value="" disabled>Error loading partners</MenuItem>}
+            {!partnersLoading && !partnersError && partnersList.length === 0 && (
+              <MenuItem value="" disabled>No partners found</MenuItem>
+            )}
+            {!partnersLoading && !partnersError && partnersList.map((p) => (
+              <MenuItem key={p} value={p}>{p}</MenuItem>
             ))}
+            {/* Fallback option if you want a static default */}
+            {!partnersLoading && !partnersError && partnersList.length === 0 && (
+              <MenuItem value="hbomax">hbomax</MenuItem>
+            )}
           </Select>
         </FormControl>
 

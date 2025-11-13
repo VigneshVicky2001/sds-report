@@ -40,3 +40,12 @@ export const downloadExcel = async ({ projectName }) => {
     console.error('Excel download failed:', error);
   }
 };
+
+export const getPartners = () => {
+  return baseApi.get(`projects/getAll`)
+  .then(response => response.data)
+  .catch(error => {
+    console.error(error);
+    throw error;
+  });
+};

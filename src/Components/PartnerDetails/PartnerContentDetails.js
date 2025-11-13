@@ -6,11 +6,11 @@ import {
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useLocation } from "react-router-dom";
-import { getSummaryList, downloadExcel } from "../../Service/SummaryApi";
+import { getSummaryList, downloadExcel, getPartners } from "../../Service/SummaryApi";
 import ContentLoaderOverlay from '../Common/CustomLoader';
 import { BootstrapTooltip } from "../Common/BlackToolTip";
 
-const partners = ['amazonprimevideo', 'bbcplayer', 'beinsportsconnect', 'cmgo', 'hbomax', 'iqiyi', 'mangotv', 'simplysouth', 'spotvnow', 'tvbanywhereplus', 'vidio', 'viu', 'wetv', 'youku', 'zee5'];
+const partners = ['amazonprimevideo', 'bbcplayer', 'beinsportsconnect', 'cmgo', 'disneyplus', 'hbomax', 'iqiyi', 'mangotv', 'simplysouth', 'spotvnow', 'tvbanywhereplus', 'vidio', 'viu', 'wetv', 'youku', 'zee5'];
 
 const PartnerContentDetails = () => {
   // const [searchParams] = useSearchParams();
@@ -41,10 +41,44 @@ const PartnerContentDetails = () => {
   const [isFileNotFound, setIsFileNotFound] = useState(true);
   const [isContentNotFound, setIsContentNotFound] = useState(true);
 
+  // NEW: partners state
+  const [partnersList, setPartnersList] = useState([]);
+  const [partnersLoading, setPartnersLoading] = useState(false);
+  const [partnersError, setPartnersError] = useState(null);
+
   const rows = new Array(53).fill(0).map((_, i) => ({
     title: `Item ${i + 1}`,
     status: "Active",
   }));
+
+    // fetch partners on mount
+  useEffect(() => {
+    let mounted = true;
+    const loadPartners = async () => {
+      setPartnersLoading(true);
+      setPartnersError(null);
+      try {
+        const resp = await getPartners();
+        // expecting shape: { projects: [...] }
+        const list = Array.isArray(resp?.projects) ? [...resp.projects] : [];
+        // ensure initialProjectName is present in list (so pre-selected value is shown)
+        if (initialProjectName && !list.includes(initialProjectName)) {
+          list.unshift(initialProjectName);
+        }
+        if (mounted) setPartnersList(list);
+      } catch (err) {
+        console.error("Failed to fetch partners:", err);
+        if (mounted) setPartnersError(err);
+      } finally {
+        if (mounted) setPartnersLoading(false);
+      }
+    };
+
+    loadPartners();
+    return () => {
+      mounted = false;
+    };
+  }, [initialProjectName]);
 
   const fetchData = async () => {
     setApiHit(true);
@@ -191,7 +225,7 @@ const PartnerContentDetails = () => {
             <FormControl sx={{ minWidth: 200 }} size="small">
               <InputLabel sx={{ color: "#fff" }}>Select a Partner</InputLabel>
               <Select
-                value={projectName}
+                value={projectName || ""}
                 onChange={handleProjectNameChange}
                 sx={{
                   backgroundColor: "#333",
@@ -200,7 +234,12 @@ const PartnerContentDetails = () => {
                   ".MuiSvgIcon-root": { color: "#fff" },
                 }}
               >
-                {partners.map((p) => (
+                {partnersLoading && <MenuItem value="" disabled>Loading partners...</MenuItem>}
+                {partnersError && <MenuItem value="" disabled>Error loading partners</MenuItem>}
+                {!partnersLoading && !partnersError && partnersList.length === 0 && (
+                  <MenuItem value="" disabled>No partners found</MenuItem>
+                )}
+                {!partnersLoading && !partnersError && partnersList.map((p) => (
                   <MenuItem key={p} value={p}>
                     {p}
                   </MenuItem>
